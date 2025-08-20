@@ -9,10 +9,10 @@
 #define PORT 7006
 #define BUFFER_SIZE 1024
 
-int main(int argc, char *argv[])
-{
-    if (argc != 3)
-    {
+//client.c
+
+int main(int argc, char *argv[]){
+    if (argc != 3){
         printf("Type: %s <key> <shift>\n", argv[0]);
         return 1;
     }
@@ -22,18 +22,23 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     char buffer[BUFFER_SIZE] = {0};
     char mensaje[BUFFER_SIZE];
+    // Dirección IP del servidor
     char *server_ip = "192.168.1.70";
+
+    // Creamos el socket del servidor para la comunicación
     client_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (client_sock == -1)
-    {
+    if (client_sock == -1){
         perror("[-] Error to create the socket");
         return 1;
     }
+
+    //Configuramos la dirección del servidor (IPv4, puerto, cualquier IP local).
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = inet_addr(server_ip);
-    if (connect(client_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
+
+    // Conectamos al servidor
+    if (connect(client_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
         perror("[-] Error to connect");
         close(client_sock);
         return 1;
@@ -43,30 +48,27 @@ int main(int argc, char *argv[])
     snprintf(mensaje, sizeof(mensaje), "%s %s", clave, shift);
     send(client_sock, mensaje, strlen(mensaje), 0);
     printf("[+][Client] Key and shift was sent: %s\n", mensaje);
+
+    // Esperamos la respuesta del servidor
     int bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
-    if (bytes > 0)
-    {
+    if (bytes > 0){
         buffer[bytes] = '\0';
         printf("[+][Client] Server message: %s\n", buffer);
-        if (strstr(buffer, "ACCESS GRANTED") != NULL)
-        {
+        if (strstr(buffer, "ACCESS GRANTED") != NULL){
             FILE *fp = fopen("info.txt", "w");
-            if (fp == NULL)
-            {
+            if (fp == NULL){
                 perror("[-] Error to open the file");
                 close(client_sock);
                 return 1;
             }
-            while ((bytes = recv(client_sock, buffer, sizeof(buffer), 0)) > 0)
-            {
+            while ((bytes = recv(client_sock, buffer, sizeof(buffer), 0)) > 0){
                 fwrite(buffer, 1, bytes, fp);
             }
             printf("[+][Client] The file was save like 'info.txt'\n");
             fclose(fp);
         }
     }
-    else
-    {
+    else{
         printf("[-] Server connection tiemeout\n");
     }
     close(client_sock);
