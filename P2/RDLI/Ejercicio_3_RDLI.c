@@ -22,7 +22,7 @@ void saveSysInfo(const char *outputFile) {
         char buffer[512];
         FILE *cmd;
 
-        // Ocupamos el parametro r para leer cada salida
+        // Ocupamos el parámetro r para leer cada salida
         fprintf(fp, "OS y Kernel: " "\n");
         cmd = popen("uname -o -r -s", "r");
         if (cmd) { while (fgets(buffer, sizeof(buffer), cmd)) fputs(buffer, fp); pclose(cmd); }
