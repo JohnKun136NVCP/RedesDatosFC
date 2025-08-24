@@ -1,0 +1,86 @@
+OS y Kernel:
+    Linux 6.8.0-78-generic GNU/Linux
+    Distribución:
+    DISTRIB_ID=Ubuntu
+    DISTRIB_RELEASE=24.04
+    DISTRIB_CODENAME=noble
+    DISTRIB_DESCRIPTION="Ubuntu 24.04.3 LTS"
+    PRETTY_NAME="Ubuntu 24.04.3 LTS"
+    NAME="Ubuntu"
+    VERSION_ID="24.04"
+    VERSION="24.04.3 LTS (Noble Numbat)"
+    VERSION_CODENAME=noble
+    ID=ubuntu
+    ID_LIKE=debian
+    HOME_URL="https://www.ubuntu.com/"
+    SUPPORT_URL="https://help.ubuntu.com/"
+    BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+    PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+    UBUNTU_CODENAME=noble
+    LOGO=ubuntu-logo
+IPs:
+    192.168.100.122 2806:2f0:a500:f73b:a00:27ff:fef6:5308
+CPU Info:
+    Model name:                           13th Gen Intel(R) Core(TM) i9-13900H
+Núcleos:
+    4
+Arquitectura:
+    x86_64
+Memoria:
+                    total        used        free      shared  buff/cache   available
+        Mem:           3.8Gi       429Mi       3.4Gi       1.1Mi       263Mi       3.4Gi
+        Swap:          3.1Gi          0B       3.1Gi
+    Disco:
+    Filesystem                         Size  Used Avail Use% Mounted on
+    tmpfs                              392M  1.1M  391M   1% /run
+    /dev/mapper/ubuntu--vg-ubuntu--lv   15G  5.9G  8.1G  43% /
+    tmpfs                              2.0G     0  2.0G   0% /dev/shm
+    tmpfs                              5.0M     0  5.0M   0% /run/lock
+    /dev/sda2                          2.0G  100M  1.7G   6% /boot
+    tmpfs                              392M   12K  392M   1% /run/user/1000
+    Usuarios conectados:
+    laudima  tty1         2025-08-24 19:02
+    laudima  pts/0        2025-08-24 19:03 (192.168.100.103)
+    laudima  pts/1        2025-08-24 20:05 (192.168.100.103)
+Todos los usuarios del sistema:
+    root
+    daemon
+    bin
+    sys
+    sync
+    games
+    man
+    lp
+    mail
+    news
+    uucp
+    proxy
+    www-data
+    backup
+    list
+    irc
+    _apt
+    nobody
+    systemd-network
+    systemd-timesync
+    dhcpcd
+    messagebus
+    systemd-resolve
+    pollinate
+    polkitd
+    syslog
+    uuidd
+    tcpdump
+    tss
+    landscape
+    fwupd-refresh
+    usbmux
+    sshd
+    laudima
+Uptime:
+    up 1 hour, 17 minutes
+Procesos activos:
+    147
+Directorios montados:
+    /dev/mapper/ubuntu--vg-ubuntu--lv on / type ext4 (rw,relatime)
+    /dev/sda2 on /boot type ext4 (rw,relatime)
