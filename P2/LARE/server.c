@@ -172,7 +172,10 @@ void system_info(void) {
   // Obtener informacion de memoria, la memoria se dice en Kb
   system("grep MemTotal /proc/meminfo >> sysinfo.txt");
   // Obtener informacion del disco.
-  system("df -h >> sysinfo.txt | sed 's/^/\t/'>> sysinfo.txt");
+  out = fopen(file, "a");
+  fprintf(out, "Disco:\n");
+  fclose(out);
+  system("df -h | sed 's/^/\t/'>> sysinfo.txt");
   // Usuarios conectados
   out = fopen(file, "a");
   fprintf(out, "Usuarios conectados:\n");
