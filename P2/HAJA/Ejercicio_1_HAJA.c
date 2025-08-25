@@ -1,183 +1,41 @@
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
+// cifrado_cesar
+// ejercicio 1
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
-#include <stdbool.h>
+#include <string.h>
+#include <stdlib.h>
 
-#define PORT 7006
-#define BUFFER_SIZE 1024 
-
-void decryptCaesar(char *text, int shift) {
-    shift = shift % 26;
-    for (int i = 0; text[i] != '\0'; i++) {
-        char c = text[i];
-        if (isupper(c)) {
-            text[i] = ((c - 'A' - shift + 26) % 26) + 'A';
-        } else if (islower(c)) {
-            text[i] = ((c - 'a' - shift + 26) % 26) + 'a';
-        } else {
-            text[i] = c;
-        }
+/*  cifrar con César.
+   - Solo letras (A-Z, a-z).
+   - Espacios, números y signos no los toca
+*/
+void encryptCaesar(char *s, int shift) {
+    shift %= 26; // por si pasas shifts gigantes
+    for (int i = 0; s[i] != '\0'; i++) {
+        unsigned char c = s[i];
+        if (isupper(c))      s[i] = ((c - 'A' + shift) % 26) + 'A';
+        else if (islower(c)) s[i] = ((c - 'a' + shift) % 26) + 'a';
+        // si no es letra, lo dejamos 
     }
 }
 
-void saveNetworkInfo(const char *outputFile) {
-    FILE *fpCommand;
-    FILE *fpOutput;
-    char buffer[512];
-
-    fpCommand = popen("ip addr show", "r");
-    if (fpCommand == NULL) {
-        perror("Error!");
-        return;
-    }
-
-    fpOutput = fopen(outputFile, "w");
-    if (fpOutput == NULL) {
-        perror("[-] Error to open the file");
-        pclose(fpCommand);
-        return;
-    }
-
-    while (fgets(buffer, sizeof(buffer), fpCommand) != NULL) {
-        fputs(buffer, fpOutput);
-    }
-
-    fclose(fpOutput);
-    pclose(fpCommand);
-}
-
-void sendFile(const char *filename, int sockfd) {
-    FILE *fp = fopen(filename, "r");
-    if (fp == NULL) {
-        perror("[-] Cannot open the file");
-        return;
-    }
-    char buffer[BUFFER_SIZE];
-    size_t bytes;
-    
-    while ((bytes = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
-        if (send(sockfd, buffer, bytes, 0) == -1) {
-            perror("[-] Error to send the file");
-            break;
-        }
-    }
-    fclose(fp);
-}
-
-
-void toLowerCase(char *str) {
-    for (int i = 0; str[i]; i++)
-        str[i] = tolower((unsigned char)str[i]);
-}
-
-
-void trim(char *str) {
-    char *end;
-    while (isspace((unsigned char)*str)) str++;
-    end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end)) end--; 
-    *(end + 1) = '\0';
-}
-
-bool isOnFile(const char *bufferOriginal) {
-    FILE *fp;
-    char line[BUFFER_SIZE];
-    char buffer[BUFFER_SIZE];
-    bool foundWorld = false;
-
-    strncpy(buffer, bufferOriginal, BUFFER_SIZE);
-    buffer[BUFFER_SIZE - 1] = '\0'; 
-    
-    trim(buffer);
-    toLowerCase(buffer);
-    
-    fp = fopen("cipherworlds.txt", "r");
-    if (fp == NULL) {
-        printf("[-]Error opening file!\n");
-        return false;
-    }
-    
-    while (fgets(line, sizeof(line), fp) != NULL) {
-        line[strcspn(line, "\n")] = '\0';
-        trim(line);
-        toLowerCase(line);
-        if (strcmp(line, buffer) == 0) {
-            foundWorld = true;
-            break;
-        }
-    }
-    
-    fclose(fp);
-    return foundWorld;
-}
-
-int main() {
-    int server_sock, client_sock;
-    struct sockaddr_in server_addr, client_addr;
-    socklen_t addr_size;
-    char buffer[BUFFER_SIZE] = {0};
-    char clave[BUFFER_SIZE];
-    int shift;
-
-    server_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_sock == -1) {
-        perror("[-] Error to create the socket");
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        fprintf(stderr, "Uso: %s <shift>\n", argv[0]);
         return 1;
     }
-    
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(PORT);
-    server_addr.sin_addr.s_addr = INADDR_ANY;
+    int shift = atoi(argv[1]);
 
-    if (bind(server_sock, (struct sockaddr *)&server_addr,sizeof(server_addr))
-        < 0) {
-        perror("[-] Error binding");
-        close(server_sock);
+    char buf[1024];
+    // leo una línea completa 
+    if (!fgets(buf, sizeof(buf), stdin)) {
+        fprintf(stderr, "No se leyó nada :(\n");
         return 1;
     }
-    if (listen(server_sock, 1) < 0) {
-        perror("[-] Error on listen");
-        close(server_sock);
-        return 1;
-    }
-    printf("[+] Server listening port %d...\n", PORT);
-    addr_size = sizeof(client_addr);
-    client_sock = accept(server_sock, (struct sockaddr *)&client_addr,&addr_size);
-    if (client_sock < 0) {
-        perror("[-] Error on accept");
-        close(server_sock);
-        return 1;
-    }
-    printf("[+] Client conneted\n");
-    int bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
-    if (bytes <= 0) {
-        printf("[-] Missed key\n");
-        close(client_sock);
-        close(server_sock);
-        return 1;
-    }
-    buffer[bytes] = '\0';
-    sscanf(buffer, "%s %d", clave, &shift); // extrae clave y desplazamiento
-    printf("[+][Server] Encrypted key obtained: %s\n", clave);
+    // le quito el salto de línea si estorba
+    buf[strcspn(buf, "\n")] = '\0';
 
-    if (isOnFile(clave)) {
-        decryptCaesar(clave, shift);
-        printf("[+][Server] Key decrypted: %s\n", clave);
-        send(client_sock, "ACCESS GRANTED", strlen("ACCESS GRANTED"), 0);
-        sleep(1); // Peque~na pausa para evitar colisi ́on de datos
-        saveNetworkInfo("network_info.txt");
-        sendFile("network_info.txt", client_sock);
-        printf("[+] Sent file\n");
-    } else {
-        send(client_sock, "ACCESS DENIED", strlen("ACCESS DENIED"), 0);
-        printf("[-][Server] Wrong Key\n");
-    }
-    close(client_sock);
-    close(server_sock);
+    encryptCaesar(buf, shift);
+    printf("%s\n", buf);
     return 0;
 }
