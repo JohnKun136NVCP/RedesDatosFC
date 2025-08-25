@@ -1,82 +1,114 @@
-#include <ctype.h>
+// ===== Programa cliente TCP =====
+// Este programa se conecta a un servidor TCP y envía dos valores
+// (clave y shift). Para leer entradas de usuario de forma segura,
+// se utiliza fgets() en lugar de gets() o scanf sin límites.
+
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-// Tamaño máximo de la línea a leer con fgets (incluye el byte del '\0')
-#define MAX_LINE_LENGTH 1024
-
-/*
- * Cifra el texto en sitio usando el cifrado César.
- * - text: cadena a modificar (terminada en '\0').
- * - shift: desplazamiento (puede ser negativo o mayor que 26).
- */
-void encryptCaesar(char *text, int shift) {
-    // Si no hay texto, no hay nada que cifrar
-    if (text == NULL) {
-        return;
-    }
-
-    // Normaliza el desplazamiento para que quede en el rango [0, 25]
-    shift = shift % 26;
-    if (shift < 0) {
-        shift += 26;
-    }
-
-    // Recorre el texto y aplica el desplazamiento únicamente a letras
-    for (int i = 0; text[i] != '\0'; i++) {
-        unsigned char c = (unsigned char)text[i];
-        if (isupper(c)) {
-            text[i] = (char)(((c - 'A' + shift) % 26) + 'A');
-        } else if (islower(c)) {
-            text[i] = (char)(((c - 'a' + shift) % 26) + 'a');
-        }
-    }
-}
+// Puerto del servidor y tamaño de buffers de E/S
+#define PORT 7006
+#define BUFFER_SIZE 1024
 
 int main(int argc, char *argv[]) {
-    // Desplazamiento por defecto
-    int shift = 3;
+    // Buffers para las credenciales y comunicación
+    char clave[BUFFER_SIZE];        // Almacena la clave a enviar
+    char shift_str[BUFFER_SIZE];    // Almacena el desplazamiento (como texto)
+    char buffer[BUFFER_SIZE] = {0}; // Buffer de recepción
+    char mensaje[BUFFER_SIZE];      // Mensaje de salida al servidor
 
-    // Si se pasa un argumento, se interpreta como desplazamiento.
-    // Uso: ./programa [desplazamiento]
-    if (argc == 2) {
-        char *endptr = NULL;
-        long parsed = strtol(argv[1], &endptr, 10);
-        if (endptr == NULL || *endptr != '\0') {
-            fprintf(stderr, "El desplazamiento debe ser un entero.\n");
+    // Dirección IP del servidor (sustituir por la IP real)
+    char *server_ip = "XXX.XXX.XXX.XXX";
+
+    // Si se proporcionan parámetros por línea de comandos, úsalos; de lo contrario, pide entrada con fgets()
+    if (argc == 3) {
+        // Copia segura de los argumentos a los buffers locales
+        strncpy(clave, argv[1], sizeof(clave) - 1);
+        clave[sizeof(clave) - 1] = '\0';
+        strncpy(shift_str, argv[2], sizeof(shift_str) - 1);
+        shift_str[sizeof(shift_str) - 1] = '\0';
+    } else {
+        // Solicita la clave al usuario usando fgets() y elimina el salto de línea
+        printf("Ingrese la clave: ");
+        if (fgets(clave, sizeof(clave), stdin) == NULL) {
+            fprintf(stderr, "Error al leer la clave.\n");
             return 1;
         }
-        shift = (int)parsed;
-    } else if (argc > 2) {
-        fprintf(stderr, "Uso: %s [desplazamiento]\n", argv[0]);
-        fprintf(stderr, "Ejemplo: %s 3\n", argv[0]);
+        size_t len = strlen(clave);
+        if (len > 0 && clave[len - 1] == '\n') {
+            clave[len - 1] = '\0';
+        }
+
+        // Solicita el shift al usuario usando fgets() y elimina el salto de línea
+        printf("Ingrese el shift: ");
+        if (fgets(shift_str, sizeof(shift_str), stdin) == NULL) {
+            fprintf(stderr, "Error al leer el shift.\n");
+            return 1;
+        }
+        len = strlen(shift_str);
+        if (len > 0 && shift_str[len - 1] == '\n') {
+            shift_str[len - 1] = '\0';
+        }
+    }
+
+    // Crea el socket TCP (AF_INET + SOCK_STREAM)
+    int client_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (client_sock == -1) {
+        perror("[-] Error to create the socket");
         return 1;
     }
 
-    // Buffer para leer la línea con fgets
-    char buffer[MAX_LINE_LENGTH];
+    // Rellena la estructura con la dirección del servidor
+    struct sockaddr_in serv_addr;
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+    serv_addr.sin_addr.s_addr = inet_addr(server_ip);
 
-    // Solicita al usuario el texto a cifrar
-    printf("Introduce el texto a cifrar: ");
-
-    // Lee una línea desde la entrada estándar (stdin)
-    if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
-        fprintf(stderr, "Error al leer la línea.\n");
+    // Intenta conectar con el servidor
+    if (connect(client_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("[-] Error to connect");
+        close(client_sock);
         return 1;
     }
+    printf("[+] Connected to server\n");
 
-    // Elimina el salto de línea final que deja fgets (si lo hay)
-    size_t len = strlen(buffer);
-    if (len > 0 && buffer[len - 1] == '\n') {
-        buffer[len - 1] = '\0';
+    // Construye el mensaje de salida "<clave> <shift>" y lo envía
+    snprintf(mensaje, sizeof(mensaje), "%s %s", clave, shift_str);
+    send(client_sock, mensaje, strlen(mensaje), 0);
+    printf("[+][Client] Key and shift was sent: %s\n", mensaje);
+
+    // Recibe la respuesta inicial del servidor (por ejemplo, estado de acceso)
+    int bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+    if (bytes > 0) {
+        buffer[bytes] = '\0';
+        printf("[+][Client] Server message: %s\n", buffer);
+
+        // Si el acceso fue concedido, el servidor enviará un archivo; guárdalo como info.txt
+        if (strstr(buffer, "ACCESS GRANTED") != NULL) {
+            FILE *fp = fopen("info.txt", "w");
+            if (fp == NULL) {
+                perror("[-] Error to open the file");
+                close(client_sock);
+                return 1;
+            }
+
+            // Lee en bloques hasta que el servidor cierre la conexión
+            while ((bytes = recv(client_sock, buffer, sizeof(buffer), 0)) > 0) {
+                fwrite(buffer, 1, bytes, fp);
+            }
+            printf("[+][Client] The file was save like 'info.txt'\n");
+            fclose(fp);
+        }
+    } else {
+        printf("[-] Server connection tiemeout\n");
     }
 
-    // Cifra en sitio y muestra el resultado
-    encryptCaesar(buffer, shift);
-    printf("Texto cifrado: %s\n", buffer);
-
+    // Cierra el socket antes de salir
+    close(client_sock);
     return 0;
 }
-
-
