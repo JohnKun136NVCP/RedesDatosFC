@@ -2,13 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
-/* Mini demo de fgets():
+/* fgets():
    - Lee hasta tam-1 o hasta '\n'.
-   - Mete '\0' al final si hay espacio (no deja la cadena “abierta”).
-   - Si entra el '\n', hay que quitarlo a mano si molesta.
 */
 int main(void) {
-    char buffer[64]; // tamaño modesto, suficiente pa' un nombre
+    char buffer[64]; // tamaño modesto, suficiente para un nombre
 
     printf("Escribe tu nombre completo y dale enter: ");
 
