@@ -7,7 +7,7 @@
 int main(int argc, char *argv[]) {
   if (argc != 3) {
     printf("Type: %s <archive> <number> \n The number must be between 1 "
-           "and 26",
+           "and 26\n",
            argv[0]);
     return 1;
   }
@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
   // ya encriptado
   stream = fopen(argv[1], "r");
   exit = fopen("temp.txt", "w"); // El archivo temporal
-
+  // Leemos de 100 en 100 caracteres del archivo para su encriptacion
   while (fgets(line, MAX_LEN, stream) != NULL) {
     encryptCaesar(line, shift); // Encriptamos...
     fprintf(exit, "%s",
