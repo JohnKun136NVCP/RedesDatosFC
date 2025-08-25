@@ -9,7 +9,7 @@
 int main() {
     int servidor_fd, nuevo_socket;
     struct sockaddr_in direccion;
-    char *mensaje = "¡Hola desde el servidor!\n";
+    char *mensaje = "¡Hola desde el servidor!  [wpvkpi]\n";
 
     // Crear socket
     servidor_fd = socket(AF_INET, SOCK_STREAM, 0);
