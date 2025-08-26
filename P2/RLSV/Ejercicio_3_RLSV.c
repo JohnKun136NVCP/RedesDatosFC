@@ -11,6 +11,71 @@
 #define PORT 7006        // Puerto en el que el servidor escucha
 #define BUFFER_SIZE 1024 // Tamaño del buffer para recibir datos
 
+/**
+   Escribe en el archivo dado la información proporcionada por el comando recibido.
+*/
+void sysinfoAux(char command[], FILE* fpOutput) {
+    FILE *fpCommand;
+    char buffer[BUFFER_SIZE];
+    // Ejecutar comando para obtener información
+    fpCommand = popen(command,"r");
+    if(fpCommand == NULL){
+        perror("Error");
+        return;
+    }
+    // Leer línea por línea y escribir en el archivo
+    while (fgets(buffer, sizeof(buffer), fpCommand) != NULL) {
+        fputs(buffer, fpOutput);
+    }
+    pclose(fpCommand);
+}
+
+/* Obiene la información del servidor y la guarda en un archivo de texto */
+void writeSysinfo() {
+    FILE *fpOutput;
+    // Abrir archivo para guardar la salida
+    fpOutput = fopen("sysinfo.txt", "w");
+    if (fpOutput == NULL) {
+        perror("[-] Error to open the file");
+        return;
+    }
+    // Guardar los datos
+    fprintf(fpOutput, "\n\n-------------\n SISTEMA OPERATIVO\n-------------\n");
+    sysinfoAux("lsb_release -a", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n KERNEL\n-------------\n");
+    sysinfoAux("uname -a", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n DISTRIBUCION\n-------------\n");
+    sysinfoAux("cat /etc/*-release", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n IP'S\n-------------\n");
+    sysinfoAux("ip a", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n CPU\n ARQUITECTURA\n-------------\n");
+    sysinfoAux("lscpu", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n INFO. NUCLEOS\n-------------\n");
+    sysinfoAux("cat /proc/cpuinfo", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n MEMORIA\n-------------\n");
+    sysinfoAux("cat /proc/meminfo", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n DISCO\n-------------\n");
+    sysinfoAux("lsblk", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n USUARIOS\n-------------\n");
+    sysinfoAux("getent passwd", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n USUARIOS ACTIVOS\n-------------\n");
+    sysinfoAux("who", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n UPTIME\n-------------\n");
+    sysinfoAux("uptime -V", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n PROCESOS ACTIVOS\n-------------\n");
+    sysinfoAux("ps aux", fpOutput);
+    fprintf(fpOutput, "\n\n-------------\n DIRECTORIOS MONTADOS\n-------------\n");
+    sysinfoAux("findmnt", fpOutput);
+    
+    // Cerrar buffer para escribir archivo
+    pclose(fpOutput);
+    
+}
+
+int main() {
+    writeSysinfo();
+}
+
 /* Función de cifrado César a la inversa */
 void decryptCaesar(char *text, int shift) {
         shift = shift % 26;
