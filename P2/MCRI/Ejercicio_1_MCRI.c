@@ -9,13 +9,28 @@ void encryptCaesar(char *text, int shift) {
     shift = shift % 26;
     for (int i = 0; text[i] != '\0'; i++) {
         char c = text[i];
-        if (isupper(c)) { 
+        if (isupper(c)) {
             text[i] = ((c - 'A' + shift + 26) % 26) + 'A';
-        } 
-        else if (islower(c)) { 
+        }
+        else if (islower(c)) {
             text[i] = ((c - 'a' + shift + 26) % 26) + 'a';
-        } 
+        }
         else { text[i] = c;
-        } 
-    } 
+        }
+    }
 }
+
+int main() {
+    char text[100] = "hola";
+    int shift = 8;
+
+    printf("Texto original: %s\n", text);
+
+    encryptCaesar(text, shift);
+
+    printf("Texto cifrado: %s\n", text);
+
+    return 0;
+
+}
+
