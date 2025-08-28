@@ -19,6 +19,9 @@ int is_number(const char *str) {
     return 1;
 }
 
+/*
+    Función principal en el que el cliente puede enviar hasta 3 archivos en 3 puertos distintos al servidor
+*/
 int main(int argc, char *argv[]) {
     if (argc < 4) {
         printf("USE: %s <SERVER_IP> <PORT1> [PORT2] [PORT3] <FILE1> [FILE2] [FILE3] <SHIFT>\n", argv[0]);
