@@ -107,7 +107,7 @@ int main() {
             printf("[+] Timeout reached. Rejecting remaining ports...\n");
             for (int i = 0; i < 3; i++) {
                 if (!processed[i]) {
-                    printf("[SERVER %d] REJECTED (timeout)\n", server_ports[i]);
+                    printf("[SERVER %d] REJECTED\n", server_ports[i]);
                     processed[i] = 1;
                     remaining--;
                 }
@@ -150,18 +150,18 @@ int main() {
                         } else {
                             char *msg = "REJECTED\n";
                             send(client_sock, msg, strlen(msg), 0);
-                            printf("[SERVER %d] Request rejected. Port: %d, Shift: %d\n", 
-                                   server_ports[i], requested_port, shift);
+                            printf("[SERVER %d] REJECTED\n", 
+                                   server_ports[i]);
                         }
                     } else {
                         char *msg = "REJECTED\n";
                         send(client_sock, msg, strlen(msg), 0);
-                        printf("[SERVER %d] Invalid format. Request rejected.\n", server_ports[i]);
+                        printf("[SERVER %d] Invalid format. REJECTED\n", server_ports[i]);
                     }
                 } else {
                     char *msg = "REJECTED\n";
                     send(client_sock, msg, strlen(msg), 0);
-                    printf("[SERVER %d] No data received. Request rejected.\n", server_ports[i]);
+                    printf("[SERVER %d] No data received. REJECTED\n", server_ports[i]);
                 }
 
                 close(client_sock);
