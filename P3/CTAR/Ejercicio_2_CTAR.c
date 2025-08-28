@@ -9,7 +9,7 @@ int ports[] = {49200, 49201, 49202};
 
 //client.c
 /*
-    Función principal donde el cliente que se puede conectar a varios servidores para enviar un archivo a uno de ellos y recibir alguna respuesta.
+    Función principal donde el cliente envia un archivo al servidor en uno de los puertos correspondientes y recibir alguna respuesta.
 */
 int main(int argc, char *argv[]) {
     if (argc != 5) {
