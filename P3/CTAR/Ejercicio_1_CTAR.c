@@ -30,7 +30,7 @@ void encryptCaesar(char *text, int shift) {
 }
 
 /*
-    Función principal con la configuración del socket
+    Función principal que nos permite recibir el contenido del archivo  que envió el cliente para cifrarlo a través de un puerto
 */
 int main(int argc, char *argv[]){
     if (argc != 2) {
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]){
     }
     
     int opt = 1;
-    // Permitir la reutilización de la dirección después de cerrar el socket
+    // Permitimos que se vuelva a usar el puerto después de termianr la ejecución del programa
     if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         perror("[-] Error on setsockopt");
         close(server_sock);
