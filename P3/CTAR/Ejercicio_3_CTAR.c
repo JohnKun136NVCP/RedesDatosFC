@@ -32,7 +32,8 @@ void encryptCaesar(char *text, int shift) {
 }
 
 /*
-    Función principal con la configuración del socket
+    Función principal que nos permite recibir el contenido del archivo que envió el cliente para cifrarlo.
+    Se utilizan los 3 puertos al mismo tiempo desde la misma terminal
 */
 int main() {
     int ports[3];
@@ -53,7 +54,7 @@ int main() {
         }
 
         int opt = 1;
-        
+        // Permitimos que se vuelva a usar el puerto después de termianr la ejecución del programa
         if (setsockopt(ports[i], SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
             perror("setsockopt SO_REUSEADDR failed");
             return 1;
