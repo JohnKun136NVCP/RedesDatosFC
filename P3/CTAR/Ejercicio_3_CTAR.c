@@ -145,7 +145,7 @@ int main() {
                             encryptCaesar(file_content, shift);
                             char *msg = "File received and encrypted";
                             send(client_sock, msg, strlen(msg), 0);
-                            printf("[SERVER %d] File encrypted:\n%s\n", server_ports[i], file_content, "\n");
+                            printf("[SERVER %d] File encrypted:\n%s\n", server_ports[i], file_content);
                         } else {
                             char *msg = "REJECTED\n";
                             send(client_sock, msg, strlen(msg), 0);
