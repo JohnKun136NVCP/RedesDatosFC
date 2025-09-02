@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
 #define BACKLOG 5
 #define BUFFER_SIZE 4095
 
