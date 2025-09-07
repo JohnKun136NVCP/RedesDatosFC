@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 
+// Biblioteca para trabajar con hilos
 #include <pthread.h>
 
 #define BUFFER_SIZE 1024 // Tama~no del buffer para recibir datos
@@ -225,19 +226,28 @@ void *manejadorCliente(void *arg)
 int main(int argc, char *argv[])
 {
 
-    if (argc != 2)
+    if (argc != 4)
     {
-        printf("Type: %s <port> \n", argv[0]);
+        printf("Type: %s <port1> <port2> <port3> \n", argv[0]);
         return 1;
     }
 
-    // Función para manejar múltiples clientes
-    pthread_t t1;
+    // Funcionalidad para el manejo de 3 clientes
+    pthread_t t1, t2, t3;
 
+    // El argumento del programa es un puerto para el servidor
     char *puerto1 = argv[1];
+    char *puerto2 = argv[2];
+    char *puerto3 = argv[3];
 
+    // Creamos los hilos con la función del programa y el puerto correspondiente
     pthread_create(&t1, NULL, manejadorCliente, puerto1);
+    pthread_create(&t2, NULL, manejadorCliente, puerto2);
+    pthread_create(&t3, NULL, manejadorCliente, puerto3);
 
+    // Hacemos que el hilo main espere a que terminen los demás hilos
     pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    pthread_join(t3, NULL);
     return 0;
 }
