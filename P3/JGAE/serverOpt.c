@@ -90,73 +90,94 @@ void imprimirArchivo(const char *filename)
     fclose(fp);
 }
 
-/**
- * Función que contiene todo el programa del servidor.
+/*
+ * Función para crear un socket IPv4 TCP
  */
-void *manejadorCliente(void *arg)
+int crearSocketIPv4TCP()
 {
-    // Casteamos los argumentos del tipo genérico al array de argumentos
-    char *puertoChar = (char *)arg;
-    int server_sock, client_sock;
-    struct sockaddr_in server_addr, client_addr;
-    socklen_t addr_size;
-    char buffer[BUFFER_SIZE] = {0};
-    int puertoClient;
-    int shift;
-    int puertoServer;
-    char fileName[BUFFER_SIZE / 2];
-    char fileComplete[BUFFER_SIZE];
-
-    puertoServer = atoi(puertoChar);
-
-    // Crear el socket IPv4 TCP:
-    server_sock = socket(AF_INET, SOCK_STREAM, 0);
+    int server_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (server_sock == -1)
     {
         perror("[-] Error to create the socket");
-        return NULL;
+        return -1;
     }
+    return server_sock;
+}
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(puertoServer);
-    server_addr.sin_addr.s_addr = INADDR_ANY;
+/*
+Función para configurar el socket servidor, debe recibir un puntero a la estrcutura para que sí se modifique y no sea paso por valor
+*/
+int configurarEnlazarSocket(struct sockaddr_in *server_addr, int puertoServer, int server_sock)
+{
+    // Configuramos el socket
+    server_addr->sin_family = AF_INET;
+    server_addr->sin_port = htons(puertoServer);
+    server_addr->sin_addr.s_addr = INADDR_ANY;
 
-    if (bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    // Enlazamos el socket y hacemos que escuche en el puerto deseado
+    if (bind(server_sock, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0)
     {
         perror("[-] Error binding");
         close(server_sock);
-        return NULL;
+        return -1;
     }
+    return 0;
+}
 
+/*
+ * Función para escuchar y aceptar conexiones de clientes
+ Es importante que client_sock y client_addr sean paso por referencia porque queremos que en el código original sí se modifiquen con
+ el entero representación del socket cliente y su dirección respectivamente
+ */
+int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock, struct sockaddr_in *client_addr)
+{
+    // Estructura para el tamaño de la dirección
+    socklen_t addr_size;
+
+    // Ponemos al socket a escuchar en el puerto deseado
     if (listen(server_sock, 1) < 0)
     {
         perror("[-] Error on listen");
         close(server_sock);
-        return NULL;
+        return -1;
     }
-
     printf("[+] Server listening port %d...\n", puertoServer);
 
-    addr_size = sizeof(client_addr);
-    client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &addr_size);
-    if (client_sock < 0)
+    // Bloqueamos esperando a que un cliente se conecte
+    addr_size = sizeof(*client_addr);
+    *client_sock = accept(server_sock, (struct sockaddr *)client_addr, &addr_size);
+    if (*client_sock < 0)
     {
         perror("[-] Error on accept");
         close(server_sock);
-        return NULL;
+        return -1;
     }
     printf("[+] Client connected\n");
+}
 
+int manejadorCliente(int client_sock, int server_sock, int puertoServer)
+{
+    // Buffer para transferencia de datos
+    char buffer[BUFFER_SIZE] = {0};
+    // Puerto al que quiere conectarse el cliente
+    int puertoClient;
+    // Desplazamiento del cliente para cifrar
+    int shift;
+    // Nombre del archivo que se recibirá
+    char fileName[BUFFER_SIZE / 2];
+    // Nombre del archivo que se recibirá + la leyenda encrypted_
+    char fileComplete[BUFFER_SIZE];
+
+    // recibimos puerto y desplazamiento
     int bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
     if (bytes <= 0)
     {
         printf("[-] Missed port or shift\n");
         close(client_sock);
         close(server_sock);
-        return NULL;
+        return -1;
     }
     buffer[bytes] = '\0';
-
     sscanf(buffer, "%d %d", &puertoClient, &shift); // extrae puerto y desplazamiento
 
     // Validamos que el puerto recibido sea igual al puerto de mi socket
@@ -173,7 +194,7 @@ void *manejadorCliente(void *arg)
             printf("[-] Error receiving file name\n");
             close(client_sock);
             close(server_sock);
-            return NULL;
+            return -1;
         }
         // caracter nulo para que el final del nombre del archivo sea correcto
         fileName[bytes] = '\0';
@@ -192,7 +213,7 @@ void *manejadorCliente(void *arg)
         {
             perror("[-] Error to open the file");
             close(client_sock);
-            return NULL;
+            return -1;
         }
 
         // Recibimos el archivo en bloques por medio del buffer
@@ -220,7 +241,38 @@ void *manejadorCliente(void *arg)
 
     close(client_sock);
     close(server_sock);
-    return NULL;
+}
+
+/**
+ * Función que contiene todo el programa del servidor.
+ */
+void *
+programaServidor(void *arg)
+{
+    // Casteamos los argumentos del tipo genérico al array de argumentos
+    char *puertoChar = (char *)arg;
+    int puertoServer = atoi(puertoChar);
+
+    // enteros representación de los sockets
+    int server_sock, client_sock;
+    // Estructura definición de la dirección de los sockets
+    struct sockaddr_in server_addr, client_addr;
+
+    // Crear el socket IPv4 TCP:
+    if ((server_sock = crearSocketIPv4TCP()) < 0)
+        return NULL;
+
+    // Configuramos el socket pasando la dirección de memoria donde guardamos la configuración
+    if (configurarEnlazarSocket(&server_addr, puertoServer, server_sock) < 0)
+        return NULL;
+
+    // POnemos al socket a escuchar en el puerto deseado
+    if (escucharAceptarServidor(server_sock, puertoServer, &client_sock, &client_addr) < 0)
+        return NULL;
+
+    // Manejador del cliente
+    if (manejadorCliente(client_sock, server_sock, puertoServer) < 0)
+        return NULL;
 }
 
 int main(int argc, char *argv[])
@@ -241,9 +293,9 @@ int main(int argc, char *argv[])
     char *puerto3 = argv[3];
 
     // Creamos los hilos con la función del programa y el puerto correspondiente
-    pthread_create(&t1, NULL, manejadorCliente, puerto1);
-    pthread_create(&t2, NULL, manejadorCliente, puerto2);
-    pthread_create(&t3, NULL, manejadorCliente, puerto3);
+    pthread_create(&t1, NULL, programaServidor, puerto1);
+    pthread_create(&t2, NULL, programaServidor, puerto2);
+    pthread_create(&t3, NULL, programaServidor, puerto3);
 
     // Hacemos que el hilo main espere a que terminen los demás hilos
     pthread_join(t1, NULL);
