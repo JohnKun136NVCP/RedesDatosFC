@@ -5,8 +5,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+// Biblioteca para trabajar con hilos
+#include <pthread.h>
 
 #define BUFFER_SIZE 1024
+
+struct datos_programa
+{
+    int *client_sock;
+    struct sockaddr_in *serv_addr;
+    const char *server_ip;
+    int puerto;
+    char *rutaArchivo;
+    char *shift;
+};
 
 void sendFile(const char *filename, int sockfd)
 {
@@ -29,7 +41,7 @@ void sendFile(const char *filename, int sockfd)
     fclose(fp);
 }
 
-/* Función para configuración se socket y conexión al servidor
+/* Función para configuración del socket y conexión al servidor
  */
 int conectarServidor(struct sockaddr_in *serv_addr, int client_sock, const char *server_ip, int puerto)
 {
@@ -47,6 +59,8 @@ int conectarServidor(struct sockaddr_in *serv_addr, int client_sock, const char 
     return 0;
 }
 
+/* Función para autorizar el envío del archivo al servidor y enviarlo si es autorizado respecto a la ruta y el desplazamiento
+ */
 void autorizarEnviarArchivo(int client_sock, int puerto, char *shift, char *rutaArchivo)
 {
     char mensaje[BUFFER_SIZE];
@@ -92,6 +106,33 @@ void autorizarEnviarArchivo(int client_sock, int puerto, char *shift, char *ruta
     }
 }
 
+/*
+Función principal que ejecutará cada hilo del cliente para conectarse a un servidor con un puerto específico y enviar un archivo.
+*/
+void *programaCliente(void *arg)
+{
+    struct datos_programa *datos = (struct datos_programa *)arg;
+    int *client_sock = datos->client_sock;
+    struct sockaddr_in *serv_addr = datos->serv_addr;
+    const char *server_ip = datos->server_ip;
+    int puerto = datos->puerto;
+    char *rutaArchivo = datos->rutaArchivo;
+    char *shift = datos->shift;
+
+    // Creamos el socket de tipo TCP ipv4
+    *client_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (*client_sock == -1)
+    {
+        perror("[-] Error to create the socket");
+        return NULL;
+    }
+    if (conectarServidor(serv_addr, *client_sock, server_ip, puerto) != 1)
+    {
+        autorizarEnviarArchivo(*client_sock, puerto, shift, rutaArchivo);
+    }
+    close(*client_sock);
+}
+
 int main(int argc, char *argv[])
 {
     if (argc != 9)
@@ -100,36 +141,59 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Obtenemos los argumentos que van a necesitar todos los hilos
     char *server_ip = argv[1];
-    char *puerto1 = argv[2];
-    char *puerto2 = argv[3];
-    char *puerto3 = argv[4];
+    int puerto1 = atoi(argv[2]);
+    int puerto2 = atoi(argv[3]);
+    int puerto3 = atoi(argv[4]);
     char *rutaArchivo1 = argv[5];
     char *rutaArchivo2 = argv[6];
     char *rutaArchivo3 = argv[7];
     char *shift = argv[8];
-    int client_sock;
-    struct sockaddr_in serv_addr;
+    int client_sock1;
+    struct sockaddr_in serv_addr1;
+    int client_sock2;
+    struct sockaddr_in serv_addr2;
+    int client_sock3;
+    struct sockaddr_in serv_addr3;
 
-    int i;
-    int puertos[3] = {atoi(puerto1), atoi(puerto2), atoi(puerto3)};
-    char *rutaArchivos[3] = {rutaArchivo1, rutaArchivo2, rutaArchivo3};
+    // Creamos los 3 struct para datos del programa que pasaremos como argumento
+    struct datos_programa datos1;
+    datos1.client_sock = &client_sock1;
+    datos1.serv_addr = &serv_addr1;
+    datos1.server_ip = server_ip;
+    datos1.puerto = puerto1;
+    datos1.rutaArchivo = rutaArchivo1;
+    datos1.shift = shift;
 
-    for (i = 0; i < 3; i++)
-    {
-        // Creamos el socket de tipo TCP ipv4
-        client_sock = socket(AF_INET, SOCK_STREAM, 0);
-        if (client_sock == -1)
-        {
-            perror("[-] Error to create the socket");
-            return 1;
-        }
-        if (conectarServidor(&serv_addr, client_sock, server_ip, puertos[i]) != 1)
-        {
-            autorizarEnviarArchivo(client_sock, puertos[i], shift, rutaArchivos[i]);
-        }
-    }
+    struct datos_programa datos2;
+    datos2.client_sock = &client_sock2;
+    datos2.serv_addr = &serv_addr2;
+    datos2.server_ip = server_ip;
+    datos2.puerto = puerto2;
+    datos2.rutaArchivo = rutaArchivo2;
+    datos2.shift = shift;
 
-    close(client_sock);
+    struct datos_programa datos3;
+    datos3.client_sock = &client_sock3;
+    datos3.serv_addr = &serv_addr3;
+    datos3.server_ip = server_ip;
+    datos3.puerto = puerto3;
+    datos3.rutaArchivo = rutaArchivo3;
+    datos3.shift = shift;
+
+    // Funcionalidad para el envío de 3 archivos a 3 puertos diferentes
+    pthread_t t1, t2, t3;
+
+    // Creamos los hilos con la función del programa y el puerto correspondiente
+    pthread_create(&t1, NULL, programaCliente, &datos1);
+    pthread_create(&t2, NULL, programaCliente, &datos2);
+    pthread_create(&t3, NULL, programaCliente, &datos3);
+
+    // Hacemos que el hilo main espere a que terminen los demás hilos
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    pthread_join(t3, NULL);
+
     return 1;
 }
