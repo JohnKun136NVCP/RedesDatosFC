@@ -152,7 +152,7 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
         close(server_sock);
         return -1;
     }
-    printf("[+] Client connected\n");
+    // printf("[+] Client connected\n"); Comento lo de client connected ahorita que ya tenemos 3 servidores
 }
 
 int manejadorCliente(int client_sock, int server_sock, int puertoServer)
@@ -168,76 +168,52 @@ int manejadorCliente(int client_sock, int server_sock, int puertoServer)
     // Nombre del archivo que se recibirá + la leyenda encrypted_
     char fileComplete[BUFFER_SIZE];
 
-    // recibimos puerto y desplazamiento
+    // recibimos nombre del archivo y desplazamiento
     int bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
     if (bytes <= 0)
     {
-        printf("[-] Missed port or shift\n");
+        printf("[-] Missed file name or shift\n");
         close(client_sock);
         close(server_sock);
         return -1;
     }
     buffer[bytes] = '\0';
-    sscanf(buffer, "%d %d", &puertoClient, &shift); // extrae puerto y desplazamiento
+    sscanf(buffer, "%s %d", fileName, &shift); // extrae nombre del archivo y desplazamiento
 
-    // Validamos que el puerto recibido sea igual al puerto de mi socket
-    if (puertoClient == puertoServer)
+    // Avisamos que estamos listos para procesar el archivo
+    // Si el puerto es válido avisamos que está autorizado
+    // printf("[+][Server %d] Request accepted... %d\n", puertoServer, puertoClient);
+    send(client_sock, "REQUEST ACCEPTED", strlen("REQUEST ACCEPTED"), 0);
+
+    // Formateamos el nombre del archivo agregando la leyenda encrypted_
+    snprintf(fileComplete, BUFFER_SIZE, "encrypted_%s", fileName);
+    // Eliminamos saltos de línea y retornos de carro del nombre del archivo, reemplazándolos por el caracter nulo
+    fileName[strcspn(fileName, "\r\n")] = '\0';
+
+    // Abrimos el archivo que vamos a guardar encriptado
+    FILE *fp = fopen(fileComplete, "w");
+    if (fp == NULL)
     {
-        // Si el puerto es válido avisamos que está autorizado
-        printf("[+][Server %d] Request accepted... %d\n", puertoServer, puertoClient);
-        send(client_sock, "REQUEST ACCEPTED", strlen("REQUEST ACCEPTED"), 0);
-
-        // recibimos el nombre del archivo
-        bytes = recv(client_sock, fileName, sizeof(fileName) - 1, 0);
-        if (bytes <= 0)
-        {
-            printf("[-] Error receiving file name\n");
-            close(client_sock);
-            close(server_sock);
-            return -1;
-        }
-        // caracter nulo para que el final del nombre del archivo sea correcto
-        fileName[bytes] = '\0';
-
-        // Enviamos confirmación de recibido del nombre del archivo
-        send(client_sock, "FILENAME RECEIVED", strlen("FILENAME RECEIVED"), 0);
-
-        // Formateamos el nombre del archivo agregando la leyenda encrypted_
-        snprintf(fileComplete, BUFFER_SIZE, "encrypted_%s", fileName);
-        // Eliminamos saltos de línea y retornos de carro del nombre del archivo, reemplazándolos por el caracter nulo
-        fileName[strcspn(fileName, "\r\n")] = '\0';
-
-        // Abrimos el archivo que vamos a guardar encriptado
-        FILE *fp = fopen(fileComplete, "w");
-        if (fp == NULL)
-        {
-            perror("[-] Error to open the file");
-            close(client_sock);
-            return -1;
-        }
-
-        // Recibimos el archivo en bloques por medio del buffer
-        while ((bytes = recv(client_sock, buffer, sizeof(buffer), 0)) > 0)
-        {
-            // cada bloque se cifra y se escribe en el archivo
-            caesar(buffer, bytes, shift, 1);
-            fwrite(buffer, 1, bytes, fp);
-        }
-
-        // Avisamos que el archivo fue cifrado
-        send(client_sock, "FILE RECEIVED AND ENCRYPTED", strlen("FILE RECEIVED AND ENCRYPTED"), 0);
-        printf("[+][Server %d] File received and encrypted:\n", puertoServer);
-
-        fclose(fp);
-        // Imprimir el archivo cifrado
-        imprimirArchivo(fileComplete);
+        perror("[-] Error to open the file");
+        close(client_sock);
+        return -1;
     }
-    else
+
+    // Recibimos el archivo en bloques por medio del buffer
+    while ((bytes = recv(client_sock, buffer, sizeof(buffer), 0)) > 0)
     {
-        // si el puerto no es entonces mandamos REJECTED
-        send(client_sock, "REJECTED", strlen("REJECTED"), 0);
-        printf("[+][Server %d] Request rejected (Client requested port %d)\n", puertoServer, puertoClient);
+        // cada bloque se cifra y se escribe en el archivo
+        caesar(buffer, bytes, shift, 1);
+        fwrite(buffer, 1, bytes, fp);
     }
+
+    // Avisamos que el archivo fue cifrado
+    send(client_sock, "FILE RECEIVED AND ENCRYPTED", strlen("FILE RECEIVED AND ENCRYPTED"), 0);
+    printf("[+][Server %d] File received and encrypted:\n", puertoServer);
+
+    fclose(fp);
+    // Imprimir el archivo cifrado
+    imprimirArchivo(fileComplete);
 
     close(client_sock);
     close(server_sock);
