@@ -24,6 +24,7 @@ void trim(char *str) {
 void sendFile(const char *filename, char buffer[]) {
         //Abre el archivo en solo lectura (r)
         size_t bytesRead;
+        //printf("\n %s \n", filename);
         FILE *fp = fopen(filename, "r");
         if (fp == NULL) {
                 perror("[-] Cannot open the file");
@@ -37,38 +38,53 @@ void sendFile(const char *filename, char buffer[]) {
         trim(buffer);
         fclose(fp);
 }
-
 int main(int argc, char *argv[]) {
-	//Argumentos máximos
-        if (argc != 4) {
-                printf("Type: %s <puerto> <desplazamiento> <archivo>\n", argv[0]);
-                return 1;
+        //Recibimos la direccion ip del servidor
+        char *server_ip = argv[1];
+        //Guardamos los puertos dados por el usuario, el ciclo se rompe cuando se 
+        // encuentra algo que no pueda convertirse a numero o superemos los 3 puertos
+        int puerto[3];
+        int i = 0;
+        while (i < 3){
+                int conversionp = atoi(argv[2+i]);
+                if(conversionp != 0){
+                        puerto[i] = conversionp; 
+                }
+                else{
+                        break;
+                }
+                i++;
         }
-	//Se recibe el puerto, se espera recibir un número
-        char *puerto = argv[1];
-        int objetivo = atoi(puerto);
-        if(objetivo == 0){
-                printf("Puerto Invalido");
-                return 1;
+        //Sumamos dos pues es donde en el arreglo argv se dan los puertos
+        i += 2;
+        char *archivos[3] = {NULL, NULL, NULL};
+        int num_archivos = 0;
+        //Leemos los archivos, se tiene un limite de 3. Uno para cada servidor.
+        for (int j = i; j < argc-1 && num_archivos < 3; j++){
+                archivos[num_archivos++] = argv[j];
         }
-	//Se recibe el desplazamiento, se espera recibir un número
-        char *shift = argv[2];
+        //Si no se dan archivos mandamos un error.
+        if(archivos[0]== NULL){
+                printf("No se dieron archivos.");
+                return 1;
+        } 
+        //Si solo se da un archivo lo copiamos en los otros espacios del arreglo
+        else if(archivos[1] == NULL){
+                archivos[1] = archivos[0];
+        }
+        //Si se dan solo dos archivos, copiamos el de posicion uno en la ultima posicion
+        if(archivos[2]== NULL){
+                archivos[2] = archivos[1];
+        }
+        char *shift = argv[argc-1];
         int desplazamiento = atoi(shift);
         if(desplazamiento == 0){
                 printf("Desplazamiento Invalido");
                 return 1;
         }
-        char *archivo = argv[3];
-	//Declaramos todos los puertos a los que podemos conectarnos        
-        int todos_puertos[3];
-        todos_puertos[0] = 49200;
-        todos_puertos[1] = 49201;
-        todos_puertos[2] = 49202;
 
         int client_sock[3]; 
         struct sockaddr_in serv_addr;
-        char *server_ip = "192.168.100.56";
-	//Creamos tres sockets
         for (int i = 0; i < (sizeof(client_sock)/sizeof(client_sock[0])); i++){
                 client_sock[i] = socket(AF_INET, SOCK_STREAM, 0);
                 if (client_sock[i] == -1) {
@@ -77,12 +93,15 @@ int main(int argc, char *argv[]) {
                 }
         }
         serv_addr.sin_family = AF_INET; 
-	//Para cada socket le asignamos el puerto correspondiente segun el indice de su arreglo
-	//Después intentamos establecer conexión, si se acepta terminamos, si no seguimos buscando el puerto correspondiente.
-        for (int i = 0; i < (sizeof(todos_puertos)/sizeof(todos_puertos[0])); i++){ 
+        //Hacemos una conexion a los puertos mandados, donde si un indice de los puertos es igual a 0 lo saltamos.
+        // Se supone que los archivos dados estan en el orden respectivo de los  puertos dados.
+        for (int i = 0; i < (sizeof(puerto)/sizeof(puerto[0])); i++){ 
+                if(puerto[i] == 0){
+                        break;
+                }
                 char buffer[BUFFER_SIZE] = {0};
                 char mensaje[BUFFER_SIZE];
-                serv_addr.sin_port = htons(todos_puertos[i]);
+                serv_addr.sin_port = htons(puerto[i]);
                 serv_addr.sin_addr.s_addr = inet_addr(server_ip);
                 int respuesta = connect(client_sock[i], (struct sockaddr *)&serv_addr, sizeof(serv_addr));
                 if (respuesta < 0) {
@@ -93,17 +112,14 @@ int main(int argc, char *argv[]) {
                 }
 
                 char clave[BUFFER_SIZE] = {0};
-                sendFile(archivo, clave); 
-                snprintf(mensaje, sizeof(mensaje), "puerto: %d llave: %d contenido: %s", objetivo, desplazamiento, clave);
+                sendFile(archivos[i], clave); 
+                snprintf(mensaje, sizeof(mensaje), "puerto: %d llave: %d contenido: %s", puerto[i], desplazamiento, clave);
                 send(client_sock[i], mensaje, strlen(mensaje), 0);
 
                 int bytes = recv(client_sock[i], buffer, sizeof(buffer) - 1, 0);
                 if (bytes > 0) {
                         buffer[bytes] = '\0';
-                        printf("[*]SERVER  RESPONSE %d: %s\n",todos_puertos[i], buffer);
-                        if(strstr(buffer, "REJECTED") == NULL){
-                                i = 4;
-                        }
+                        printf("[*]SERVER  RESPONSE %d: %s\n",puerto[i], buffer);
                 } else {
                         printf("[-] Server connection tiemeout\n");
                 }
