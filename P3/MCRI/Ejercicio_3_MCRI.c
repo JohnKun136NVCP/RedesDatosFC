@@ -10,12 +10,11 @@
 int ports[] = {49200, 49201, 49202};
 
 int send_request(const char *server_ip, int port, int target_port, int shift, char *filename){
-    int client_sock;
+    int client_sock = socket(AF_INET, SOCK_STREAM, 0);;
     struct sockaddr_in serv_addr;
     char buffer[BUFFER_SIZE] = {0};
     int bytes;
 
-    client_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (client_sock == -1){
         perror("[-] Error al crear el socket");
         return 1;
@@ -123,19 +122,24 @@ return 0;
 }
 
 int main(int argc, char *argv[]){
-    if (argc != 5){
-        printf("Uso: %s <SERVIDOR_IP> <PUERTO> <DESPLAZAMIENTO> <Nombre del archivo>\n", argv[0]);
+    if (argc < 5) {
+        printf("Uso: %s <SERVIDOR_IP> <SHIFT> <PUERTO1> <ARCHIVO1> [<ARCHIVO2> ...] [<PUERTO2> <ARCHIVO3> ...]\n", argv[0]);
         return 1;
     }
 
     char *server_ip = argv[1];
-    int target_port = atoi(argv[2]);
-    int shift = atoi(argv[3]);
-    char *filename = argv[4];
-    int n_ports = sizeof(ports) / sizeof(ports[0]);
+    int shift = atoi(argv[2]);
 
-    for (int i = 0; i < n_ports; i++){
-        send_request(server_ip, ports[i], target_port, shift, filename);
-    }
+    while (i < argc) {
+        int puerto = atoi(argv[i]);
+        i++;
+
+        while (i < argc && argv[i][0] != '0') {  
+            if (atoi(argv[i]) > 0 && strstr(argv[i], ".") == NULL) {
+                break;
+            } 
+            enviar_archivo(ip, puerto, shift, argv[i]);
+            i++;
+        }
     return 0;
 }
