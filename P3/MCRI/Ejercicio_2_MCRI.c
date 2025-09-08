@@ -291,13 +291,13 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    printf("[+] Cliente conectado al puerto %d\n", puertos[i]);
+    printf("[+] Cliente conectado al puerto %d\n", port);
 
     // Recibir y guardar el archivo
 
     // Crear nombre de archivo según puerto
     snprintf(filename, sizeof(filename), "recibido_%d.dat", port);
-    fp = fopen(filename, "wb");
+    FILE *fp = fopen(filename, "wb");
     if (!fp)
     {
         perror("fopen");
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
     {
         printf("[-] No se recibio el puerto solicitado\n");
         close(client_sock);
-        continue;
+        return -1;
     }
     requested_port = ntohl(requested_port);
 
@@ -319,12 +319,12 @@ int main(int argc, char *argv[])
     {
         printf("[-] No se recibio el desplazamiento\n");
         close(client_sock);
-        continue;
+        return -1;
     }
     shift = ntohl(shift);
 
     // Validar puerto solicitado
-    if (requested_port != puertos[i])
+    if (requested_port != port)
     {
         const char *denied = "ACCESO DENEGADO: Puerto incorrecto.\n";
         send(client_sock, denied, strlen(denied), 0);
@@ -334,7 +334,6 @@ int main(int argc, char *argv[])
     }
 
     // Recibir nombre del archivo
-    char filename[BUFFER_SIZE];
     if (recv(client_sock, &filename, sizeof(filename) - 1, 0) <= 0)
     {
         printf("[-] No se recibio el nombre del archivo\n");
@@ -345,16 +344,14 @@ int main(int argc, char *argv[])
     const char *granted = "ACCESO OTORGADO: Enviando archivo.\n";
     send(client_sock, granted, strlen(granted), 0);
 
-    FILE *fp = fopen(filename, "w");
+    fp = fopen(filename, "w");
     if (fp == NULL)
     {
         perror("[-] Error al abrir el archivo");
         close(client_sock);
-        continue;
+        return -1;
     }
 
-    char buffer[BUFFER_SIZE];
-    int bytes;
     // Recibir y guardar el archivo
     while ((bytes = recv(client_sock, buffer, sizeof(buffer), 0)) > 0)
     {
@@ -369,7 +366,7 @@ int main(int argc, char *argv[])
     {
         perror("[-] Error al abrir el archivo para enviar");
         close(client_sock);
-        continue;
+        return -1;
     }
     while ((bytes = fread(buffer, 1, BUFFER_SIZE, fp)) > 0)
     {

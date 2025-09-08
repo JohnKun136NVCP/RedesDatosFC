@@ -24,7 +24,7 @@ int send_request(const char *server_ip, int port, int target_port, int shift, ch
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
 
-    if (inet_pton(AF_INET, server_ip & serv_addr.sin_addr) <= 0){
+    if (inet_pton(AF_INET, server_ip, &serv_addr.sin_addr) <= 0){
         perror("[-] Dirección inválida/ Dirección no soportada");
         close(client_sock);
         return 1;
@@ -55,8 +55,8 @@ int send_request(const char *server_ip, int port, int target_port, int shift, ch
     }
 
     // Enviar nombre del archivo
-    size_name = strlen(filename) + 1; // +1 para el terminador nulo
-    if (send(client_sock, filename, size_name, 0) == -1){
+    size_t fname_len = strlen(filename) + 1; // +1 para el terminador nulo
+    if (send(client_sock, filename, fname_len, 0) == -1){
         perror("[-] Error enviando nombre del archivo");
         close(client_sock);
         return 1;
@@ -69,7 +69,6 @@ int send_request(const char *server_ip, int port, int target_port, int shift, ch
         close(client_sock);
         return 1;
     }
-    int bytes;
 
     while ((bytes = fread(buffer, 1, sizeof(buffer), fp)) > 0){
         if (send(client_sock, buffer, bytes, 0) == -1){
@@ -129,7 +128,10 @@ int main(int argc, char *argv[]){
 
     char *server_ip = argv[1];
     int shift = atoi(argv[2]);
+    int num_ports = sizeof(ports) / sizeof(ports[0]);
+    int i = 3;
 
+    
     while (i < argc) {
         int puerto = atoi(argv[i]);
         i++;
@@ -138,8 +140,9 @@ int main(int argc, char *argv[]){
             if (atoi(argv[i]) > 0 && strstr(argv[i], ".") == NULL) {
                 break;
             } 
-            enviar_archivo(ip, puerto, shift, argv[i]);
+            send_request(server_ip, puerto, puerto, shift, argv[i]);
             i++;
         }
     return 0;
+    }
 }

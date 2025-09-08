@@ -27,7 +27,7 @@ int send_request(const char *server_ip, int port, int target_port, int shift, ch
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
 
-    if (inet_pton(AF_INET, server_ip & serv_addr.sin_addr) <= 0)
+    if (inet_pton(AF_INET, server_ip, &serv_addr.sin_addr) <= 0)
     {
         perror("[-] Dirección inválida/ Dirección no soportada");
         close(client_sock);
@@ -78,7 +78,6 @@ int send_request(const char *server_ip, int port, int target_port, int shift, ch
         close(client_sock);
         return 1;
     }
-    int bytes;
 
     while ((bytes = fread(buffer, 1, sizeof(buffer), fp)) > 0)
     {

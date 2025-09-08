@@ -365,7 +365,7 @@ int main()
                         return -1;
                     }
                 }
-                fclose(fp)
+                fclose(fp);
 
                 printf("[+] Archivo enviado al cliente y conexión cerrada\n");
                 close(client_sock);
