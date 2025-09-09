@@ -13,7 +13,7 @@ int send_request(const char *server_ip, int port, int target_port, int shift, ch
 {
     int client_sock;
     struct sockaddr_in serv_addr;
-    char buffer[BUFFER_SIZE] = {0};
+    char buffer[BUFFER_SIZE];
     int bytes;
 
     client_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -62,8 +62,8 @@ int send_request(const char *server_ip, int port, int target_port, int shift, ch
     }
 
     // Enviar nombre del archivo
-    size_name = strlen(filename) + 1; // +1 para el terminador nulo
-    if (send(client_sock, filename, size_name, 0) == -1)
+    size_t fname_len = strlen(filename) + 1; // +1 para el terminador nulo
+    if (send(client_sock, filename, fname_len, 0) == -1)
     {
         perror("[-] Error enviando nombre del archivo");
         close(client_sock);
@@ -103,16 +103,16 @@ int send_request(const char *server_ip, int port, int target_port, int shift, ch
         return 1;
     }
 
-    buffer[bytes] = '\0';
     printf("[+][Client] Mensaje del servidor: %s\n", buffer);
+    buffer[bytes] = '\0';
 
     if (strstr(buffer, "ACCESO OTORGADO") != NULL)
     {
-        char output[50];
+        char output[256];
         snprintf(output, sizeof(output), "cifrado_%d_%s", port, filename);
 
-        FILE *fp = fopen(output, "w");
-        if (fp == NULL)
+        FILE *out = fopen(output, "w");
+        if (out == NULL)
         {
             perror("[-] Error to open the file");
             close(client_sock);
@@ -121,11 +121,11 @@ int send_request(const char *server_ip, int port, int target_port, int shift, ch
 
         while ((bytes = recv(client_sock, buffer, sizeof(buffer), 0)) > 0)
         {
-            fwrite(buffer, 1, bytes, fp);
+            fwrite(buffer, 1, bytes, out);
         }
 
-        fclose(fp);
-        printf("[+][Client] El archivo fue guardado como 'info.txt'\n");
+        fclose(out);
+        printf("[+][Client] El archivo fue guardado como 'cifrado_%d_%s.txt'\n", port);
     }
     else
     {

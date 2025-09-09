@@ -236,9 +236,9 @@ void guardar_sysinfo()
 
 int main(int argc, char *argv[])
 {
-    if (argc != 1)
+    if (argc != 2)
     {
-        printf("Uso: %s\n", argv[0]);
+        printf("Uso: <PORT>%s\n", argv[0]);
         return 1;
     }
 
@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
         send(client_sock, denied, strlen(denied), 0);
         printf("[-] Solicitud rechazada, el puerto solicitado es %d\n", requested_port);
         close(client_sock);
-        continue;
+        return -1;
     }
 
     // Recibir nombre del archivo
@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
     {
         printf("[-] No se recibio el nombre del archivo\n");
         close(client_sock);
-        continue;
+        return -1;
     }
 
     const char *granted = "ACCESO OTORGADO: Enviando archivo.\n";
@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
             return -1;
         }
     }
-    fclose(fp)
+    fclose(fp);
 
     printf("[+] Archivo enviado al cliente y conexión cerrada\n");
     close(client_sock);
