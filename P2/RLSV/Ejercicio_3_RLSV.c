@@ -183,74 +183,73 @@ bool isOnFile(const char *bufferOriginal) {
 // Función main
 int main() {
         writeSysinfo();
-
-        // int server_sock, client_sock;
-        // struct sockaddr_in server_addr, client_addr;
-        // socklen_t addr_size;
-        // char buffer[BUFFER_SIZE] = {0};
-        // char clave[BUFFER_SIZE];
-        // int shift;
-        // // Crea un socket.
-        // server_sock = socket(AF_INET, SOCK_STREAM, 0);
-        // if (server_sock == -1) {
-        //         perror("[-] Error to create the socket");
-        //         return 1;
-        // }
-        // // Configura la dirección del servidor (IPv4, puerto, cualquier IP local).
-        // server_addr.sin_family = AF_INET;
-        // server_addr.sin_port = htons(PORT);
-        // server_addr.sin_addr.s_addr = INADDR_ANY;
-        // // Asocia el socket al puerto.
-        // if (bind(server_sock, (struct sockaddr *)&server_addr,sizeof(server_addr))
-        // < 0) {
-        //         perror("[-] Error binding");
-        //         close(server_sock);
-        //         return 1;
-        // }
-        // // Pone el socket en modo escucha.
-        // if (listen(server_sock, 1) < 0) {
-        //         perror("[-] Error on listen");
-        //         close(server_sock);
-        //         return 1;
-        // }
-        // // Espera y acepta una conexión entrante.
-        // printf("[+] Server listening port %d...\n", PORT);
-        // addr_size = sizeof(client_addr);
-        // client_sock = accept(server_sock, (struct sockaddr *)&client_addr,&addr_size);
-        // if (client_sock < 0) {
-        //         perror("[-] Error on accept");
-        //         close(server_sock);
-        //         return 1;
-        // }
-        // // Recibe la clave cifrada y el desplazamiento.
-        // printf("[+] Client conneted\n");
-        // int bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
-        // if (bytes <= 0) {
-        //         printf("[-] Missed key\n");
-        //         close(client_sock);
-        //         close(server_sock);
-        //         return 1;
-        // }
-        // // Extrae ambos usando sscanf.
-        // buffer[bytes] = '\0';
-        // sscanf(buffer, "%s %d", clave, &shift); // extrae clave y desplazamiento
-        // printf("[+][Server] Encrypted key obtained: %s\n", clave);
-        // // Si la clave está en el archivo, la descifra,
-        // // envía confirmación y luego el archivo de red.
-        // if (isOnFile(clave)) {
-        //         decryptCaesar(clave, shift);
-        //         printf("[+][Server] Key decrypted: %s\n", clave);
-        //         send(client_sock, "ACCESS GRANTED", strlen("ACCESS GRANTED"), 0);
-        //         sleep(1); // Peque~na pausa para evitar colisi ́on de datos
-        //         saveNetworkInfo("network_info.txt");
-        //         sendFile("network_info.txt", client_sock);
-        //         printf("[+] Sent file\n");
-        // } else {
-        //         send(client_sock, "ACCESS DENIED", strlen("ACCESS DENIED"), 0);
-        //         printf("[-][Server] Wrong Key\n");
-        // }
-        // // Libera los recursos de red.
-        // close(client_sock);
-        // close(server_sock);
+        int server_sock, client_sock;
+        struct sockaddr_in server_addr, client_addr;
+        socklen_t addr_size;
+        char buffer[BUFFER_SIZE] = {0};
+        char clave[BUFFER_SIZE];
+        int shift;
+        // Crea un socket.
+        server_sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (server_sock == -1) {
+                perror("[-] Error to create the socket");
+                return 1;
+        }
+        // Configura la dirección del servidor (IPv4, puerto, cualquier IP local).
+        server_addr.sin_family = AF_INET;
+        server_addr.sin_port = htons(PORT);
+        server_addr.sin_addr.s_addr = INADDR_ANY;
+        // Asocia el socket al puerto.
+        if (bind(server_sock, (struct sockaddr *)&server_addr,sizeof(server_addr))
+        < 0) {
+                perror("[-] Error binding");
+                close(server_sock);
+                return 1;
+        }
+        // Pone el socket en modo escucha.
+        if (listen(server_sock, 1) < 0) {
+                perror("[-] Error on listen");
+                close(server_sock);
+                return 1;
+        }
+        // Espera y acepta una conexión entrante.
+        printf("[+] Server listening port %d...\n", PORT);
+        addr_size = sizeof(client_addr);
+        client_sock = accept(server_sock, (struct sockaddr *)&client_addr,&addr_size);
+        if (client_sock < 0) {
+                perror("[-] Error on accept");
+                close(server_sock);
+                return 1;
+        }
+        // Recibe la clave cifrada y el desplazamiento.
+        printf("[+] Client conneted\n");
+        int bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+        if (bytes <= 0) {
+                printf("[-] Missed key\n");
+                close(client_sock);
+                close(server_sock);
+                return 1;
+        }
+        // Extrae ambos usando sscanf.
+        buffer[bytes] = '\0';
+        sscanf(buffer, "%s %d", clave, &shift); // extrae clave y desplazamiento
+        printf("[+][Server] Encrypted key obtained: %s\n", clave);
+        // Si la clave está en el archivo, la descifra,
+        // envía confirmación y luego el archivo de red.
+        if (isOnFile(clave)) {
+                decryptCaesar(clave, shift);
+                printf("[+][Server] Key decrypted: %s\n", clave);
+                send(client_sock, "ACCESS GRANTED", strlen("ACCESS GRANTED"), 0);
+                sleep(1); // Peque~na pausa para evitar colisi ́on de datos
+                saveNetworkInfo("network_info.txt");
+                sendFile("network_info.txt", client_sock);
+                printf("[+] Sent file\n");
+        } else {
+                send(client_sock, "ACCESS DENIED", strlen("ACCESS DENIED"), 0);
+                printf("[-][Server] Wrong Key\n");
+        }
+        // Libera los recursos de red.
+        close(client_sock);
+        close(server_sock);
         return 0;
 }
