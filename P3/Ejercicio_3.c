@@ -54,41 +54,41 @@ void save_file(char *buffer_encriptado, const char *filename){
 
 // Recibimos el shift, mensaje y encripta los mensajes recibidos.
 void recieve_encrypt_buffer(char *archivo, int client_sock, int server_sock){
-    char shift_buffer[32] = {0};
-    int bytes_shift = recv(client_sock, shift_buffer, sizeof(shift_buffer) - 1, 0);
-    if (bytes_shift <= 0) {
-        perror("[-] Failed to receive shift");
+    char buffer_recibido[BUFFER_SIZE] = {0};
+    int bytes = recv(client_sock, buffer_recibido, BUFFER_SIZE, 0);
+    if (bytes <= 0)
+    {
+        printf("[-] Error receiving message\n");
         close(client_sock);
         close(server_sock);
         return;
     }
-    shift_buffer[bytes_shift] = '\0';
-    int shift_int = atoi(strtok(shift_buffer, "\n"));
-    printf("[*] Received shift: %d\n", shift_int);
 
-    // Clear the archivo buffer
-    archivo[0] = '\0';
+    buffer_recibido[bytes] = '\0';
+    char shift[256];
+    char nombreArchivo[512];
+    sscanf(buffer_recibido, "%s %s", shift, nombreArchivo);
+    int shift_int = atoi(shift);
+    send(client_sock, "Shift and filename received\n", 28, 0);
 
-    char buffer[BUFFER_SIZE];
-    int bytes_received;
-    while ((bytes_received = recv(client_sock, buffer, sizeof(buffer) - 1, 0)) > 0) {
-        buffer[bytes_received] = '\0';  // ensure null-terminated
-        strcat(archivo, buffer);        // append received data
+    archivo[0] = '\0'; 
+    while ((bytes = recv(client_sock, buffer_recibido, BUFFER_SIZE, 0)) > 0)
+    {
+
+        buffer_recibido[bytes] = '\0';
+        strcat(archivo, buffer_recibido);
     }
 
-    if (bytes_received < 0) {
-        perror("[-] Error receiving file data");
-    }
-
-    // Encrypt the collected data
     encryptCesar(archivo, shift_int);
-
-    const char *respuesta = "File received and encrypted\n";
-    if (send(client_sock, respuesta, strlen(respuesta), 0) == -1) {
-        perror("[-] Error sending confirmation");
-    } else {
-        printf("[*] Response sent successfully\n");
+    char *respuesta = "File recieved and encrypted\n";
+    if (send(client_sock, respuesta, strlen(respuesta), 0) == -1)
+    {
+        perror("[-] Error sending recieved confirmation\n");
+        close(client_sock);
+        close(server_sock);
+        return;
     }
+    printf("[*]Response sent successfully\n");
 }
 
 // Hacemos la creación del socket para escuchar en un puerto, junto con el binding y el escucha.
