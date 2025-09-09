@@ -60,38 +60,61 @@ int connect_to_server(int puerto, const char *server_ip){
 
 // Nos permite hacer el envío del archivo y procesar la respuesta del servidor.
 void send_file_shift(const char *filename, int sockfd, char *shift, int puerto){
+    char buffer[BUFFER_SIZE];
+    char mensaje[BUFFER_SIZE];
+    char shift_buffer[BUFFER_SIZE];
     FILE *fp = fopen(filename, "r");
     if (fp == NULL)
     {
         perror("[-] Cannot open the file\n");
         return;
     }
-    char buffer[BUFFER_SIZE];
-    char shift_buffer[BUFFER_SIZE];
-    snprintf(shift_buffer, sizeof(shift_buffer), "%s \n", shift);
-    send(sockfd, shift_buffer, strlen(shift_buffer), 0);
+
+    snprintf(mensaje, BUFFER_SIZE, "%s %s", shift, filename);
+    send(sockfd, mensaje, strlen(mensaje), 0);
+
+    char buffer_conf[BUFFER_SIZE] = {0};
+    int bytes_conf = recv(sockfd, buffer_conf, sizeof(buffer_conf) - 1, 0);
+    if (bytes_conf > 0)
+    {
+        buffer_conf[bytes_conf] = '\0';
+        printf("[*] SERVER RESPONSE %d : %s\n", puerto, buffer_conf);
+    }
+
     size_t bytes;
+
     while ((bytes = fread(buffer, 1, sizeof(buffer), fp)) > 0)
     {
         if (send(sockfd, buffer, bytes, 0) == -1)
         {
-            perror("[-] Error sending the file\n");
-            break;
+            perror("[-] Error sending the file");
+            fclose(fp);
+            return;
         }
     }
+    
+    fclose(fp);
+
+    shutdown(sockfd, SHUT_WR);
+
     char buffer_respuesta[BUFFER_SIZE] = {0};
     int bytes_recv = recv(sockfd, buffer_respuesta, sizeof(buffer_respuesta) - 1, 0);
-    if (bytes_recv > 0){
-        buffer_respuesta[bytes_recv] = '\0'; 
-        if(strstr(buffer_respuesta, "File recieved and encrypted\n") != NULL){
+    if (bytes_recv > 0)
+    {
+        buffer_respuesta[bytes_recv] = '\0';
+        if (strstr(buffer_respuesta, "File recieved and encrypted\n") != NULL)
+        {
             printf("[*] SERVER RESPONSE %d : File recived and encrypted\n", puerto);
-        }else{
+        }
+        else
+        {
             perror("[-] Couldn't recieve server response \n");
         }
-    }else{
+    }
+    else
+    {
         printf("[-] Connection timeout\n");
     }
-    fclose(fp);
 }
 
 // Wrapper de función para hacer el envío de manera paralela.
