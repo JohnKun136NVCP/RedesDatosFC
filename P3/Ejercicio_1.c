@@ -55,29 +55,36 @@ void save_file(char *buffer_encriptado, const char *filename){
 
 // Recibimos el shift, mensaje y encripta los mensajes recibidos.
 void recieve_encrypt_buffer(char *archivo, int client_sock, int server_sock){
-    char buffer_recibido[BUFFER_SIZE] = {0}; 
-    int bytes = recv(client_sock, buffer_recibido, sizeof(buffer_recibido) - 1, 0);
-    if (bytes <= 0){
-        printf("[-] Error receiving message\n"); 
-        close(client_sock); 
+    char buffer_recibido[BUFFER_SIZE] = {0};
+    int bytes = recv(client_sock, buffer_recibido, BUFFER_SIZE, 0);
+    if (bytes <= 0)
+    {
+        printf("[-] Error receiving message\n");
+        close(client_sock);
         close(server_sock);
         return;
     }
-    buffer_recibido[bytes] = '\0'; 
-    char *mensajes = strtok(buffer_recibido, "\n"); 
-    char *shift = mensajes;
-    mensajes = strtok(NULL, "\n");
-    while (mensajes != NULL){
-        strcat(archivo, mensajes); 
-        strcat(archivo, " "); 
-        mensajes = strtok(NULL, "\n"); 
-    }
+
+    buffer_recibido[bytes] = '\0';
+    char shift[256];
+    char nombreArchivo[512];
+    sscanf(buffer_recibido, "%s %s", shift, nombreArchivo);
     int shift_int = atoi(shift);
+    send(client_sock, "Shift and filename received\n", 28, 0);
+    archivo[0] = '\0';
+    while ((bytes = recv(client_sock, buffer_recibido, BUFFER_SIZE, 0)) > 0)
+    {
+
+        buffer_recibido[bytes] = '\0';
+        strcat(archivo, buffer_recibido);
+    }
+
     encryptCesar(archivo, shift_int);
     char *respuesta = "File recieved and encrypted\n";
-    if(send(client_sock, respuesta, strlen(respuesta), 0) == -1){
-        perror("[-] Error sending recieved confirmation\n"); 
-        close(client_sock); 
+    if (send(client_sock, respuesta, strlen(respuesta), 0) == -1)
+    {
+        perror("[-] Error sending recieved confirmation\n");
+        close(client_sock);
         close(server_sock);
         return;
     }
