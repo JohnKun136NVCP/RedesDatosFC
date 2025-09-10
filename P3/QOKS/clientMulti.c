@@ -1,5 +1,5 @@
 /*
- * Práctica III. Cliente Multi-archivo.
+ * Práctica III. Cliente - Servidor.
  *
  * Cliente que envía múltiples archivos a múltiples puertos para trabajar con el servidor.
  *
@@ -10,7 +10,7 @@
  *   ./clientmulti <IP> <PUERTO1> <PUERTO2> <PUERTO3> <ARCHIVO1> <ARCHIVO2> <ARCHIVO3> <DESPLAZAMIENTO>
  *
  * Ejemplo:
- *   ./clientmulti 192.168.0.193 49200 49201 49202 file.txt file2.txt file3.txt 49
+ *   ./clientmulti 192.168.0.193 49200 49201 49202 file1.txt file2.txt file3.txt 49
  *
  * @author steve-quezada
  */
@@ -105,19 +105,19 @@ int main(int argc, char *argv[])
             printf(BOLD GREEN "[+] Conectado al servidor puerto %d" RESET "\n", ports[i]);
 
             // VI: Preparación del mensaje para envío
-            char message[BUFFER_SIZE + 64]; // Buffer para mensaje (incluye puerto + shift)
-            int result = snprintf(message, sizeof(message), "%d\n%d\n%s", ports[i], shift, file_content);
+            char complete_message[BUFFER_SIZE + 64]; // Buffer para mensaje (incluye puerto + shift)
+            int result = snprintf(complete_message, sizeof(complete_message), "%d\n%d\n%s", ports[i], shift, file_content);
 
-            // Verificar que el mensaje
-            if (result >= (int)sizeof(message))
+            // Verificar que el mensaje no sea demasiado largo
+            if (result >= (int)sizeof(complete_message))
             {
                 printf(RED "[Puerto %d] ERROR: Mensaje demasiado largo" RESET "\n", ports[i]);
                 close(sock);
                 continue;
             }
 
-            // VII: Envío de datos al servidor
-            ssize_t bytes_sent = send(sock, message, strlen(message), 0);
+            // VII: Envío de datos al servidor (todo en un solo mensaje)
+            ssize_t bytes_sent = send(sock, complete_message, strlen(complete_message), 0);
             if (bytes_sent > 0)
             {
                 printf(BLUE "[+]   Bytes enviados: " RESET "%zd\n", bytes_sent);
@@ -135,6 +135,12 @@ int main(int argc, char *argv[])
                     if (strstr(response, "ARCHIVO CIFRADO RECIBIDO"))
                     {
                         printf(BOLD GREEN "[+] Archivo Cifrado" RESET "\n");
+                        // Mostrar contenido cifrado si está disponible
+                        char *newline = strchr(response, '\n');
+                        if (newline)
+                        {
+                            printf(MAGENTA "[+] Contenido cifrado:\n" RESET "%s\n", newline + 1);
+                        }
                     }
                     else if (strstr(response, "PROCESADO"))
                     {
