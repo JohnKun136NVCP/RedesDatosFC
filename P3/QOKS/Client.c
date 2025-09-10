@@ -82,7 +82,6 @@ int main(int argc, char *argv[])
     {
         int sock;
         struct sockaddr_in server_addr;
-        char response[BUFFER_SIZE];
 
         printf(BOLD "\n[+] Conectando al servidor %d en puerto %d" RESET "\n", i + 1, server_ports[i]);
 
@@ -117,21 +116,13 @@ int main(int argc, char *argv[])
         printf(GREEN "[+]   Conexión establecida" RESET "\n");
 
         // III: Envío de datos al Servidor
-        char header[64];
-        snprintf(header, sizeof(header), "%d\n%d\n", target_port, shift);
+        char complete_message[BUFFER_SIZE + 64];
+        snprintf(complete_message, sizeof(complete_message), "%d\n%d\n%s", target_port, shift, file_content);
 
-        // Enviar header con puerto objetivo y desplazamiento César
-        if (send(sock, header, strlen(header), 0) < 0)
+        // Enviar todo en un solo mensaje
+        if (send(sock, complete_message, strlen(complete_message), 0) < 0)
         {
-            perror("Error enviando header");
-            close(sock);
-            continue;
-        }
-
-        // Enviar contenido del archivo con acontecimiento histórico
-        if (send(sock, file_content, strlen(file_content), 0) < 0)
-        {
-            perror("Error enviando contenido");
+            perror("Error enviando datos");
             close(sock);
             continue;
         }
@@ -139,13 +130,13 @@ int main(int argc, char *argv[])
         printf(GREEN "[+]   Datos Enviados\n" RESET);
 
         // IV: Respuesta del servidor
+        char response[BUFFER_SIZE];
         memset(response, 0, BUFFER_SIZE);
         int bytes_received = recv(sock, response, BUFFER_SIZE - 1, 0);
 
         if (bytes_received > 0)
         {
             response[bytes_received] = '\0';
-            
             printf(BLUE "[+] Respuesta del Servidor %d\n" RESET, i + 1);
 
             if (strncmp(response, "PROCESADO", 9) == 0)
@@ -164,7 +155,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            printf(RED "[-] Error: No se recibió respuesta del servidor puerto %d" RESET "\n", server_ports[i]);
+            printf(RED "[-] Error: No se recibió respuesta del servidor en puerto %d" RESET "\n", server_ports[i]);
         }
 
         // Cerrar conexión con este servidor
