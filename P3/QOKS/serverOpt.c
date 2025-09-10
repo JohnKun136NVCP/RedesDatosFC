@@ -1,5 +1,5 @@
 /*
- * Práctica III. servidor.
+ * Práctica III. Cliente - Servidor.
  *
  * Servidor que escucha en múltiples puertos simultáneamente
  * y guarda archivos cifrados en disco.
@@ -148,11 +148,23 @@ int main()
 
                     // IX: Recepción de datos del cliente
                     memset(buffer, 0, BUFFER_SIZE);
-                    int bytes_received = recv(client_sock, buffer, BUFFER_SIZE - 1, 0);
+                    int total_received = 0;
+                    int bytes_received;
+                    
+                    // Recibir todos los datos del cliente
+                    while (total_received < BUFFER_SIZE - 1) {
+                        bytes_received = recv(client_sock, buffer + total_received, BUFFER_SIZE - 1 - total_received, 0);
+                        if (bytes_received <= 0) break;
+                        total_received += bytes_received;
+                        // Si ya tenemos al menos el header y algo de contenido, intentamos procesar
+                        if (total_received > 10 && strchr(buffer + 5, '\n') && strchr(strchr(buffer + 5, '\n') + 1, '\n')) {
+                            break;
+                        }
+                    }
 
-                    if (bytes_received > 0)
+                    if (total_received > 0)
                     {
-                        buffer[bytes_received] = '\0';
+                        buffer[total_received] = '\0';
 
                         // X: Análisis del mensaje del cliente
                         int target_port, shift;         // Puerto objetivo y desplazamiento César
@@ -195,8 +207,10 @@ int main()
                                     printf(BOLD GREEN "[+] Archivo recibido y cifrado\n" RESET);
                                 }
 
-                                // XIII: Envío de confirmación al cliente
-                                send(client_sock, "ARCHIVO CIFRADO RECIBIDO", 24, 0);
+                                // XIII: Envío de confirmación al cliente (en un solo mensaje)
+                                char complete_response[BUFFER_SIZE * 2];
+                                snprintf(complete_response, sizeof(complete_response), "ARCHIVO CIFRADO RECIBIDO\n%s", file_content);
+                                send(client_sock, complete_response, strlen(complete_response), 0);
                             }
                         }
                     }
