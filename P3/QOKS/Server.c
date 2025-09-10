@@ -121,10 +121,22 @@ int main(int argc, char *argv[]) {
 
         // VI: Recepción de datos del cliente
         memset(buffer, 0, BUFFER_SIZE);
-        int bytes_received = recv(client_sock, buffer, BUFFER_SIZE - 1, 0);
+        int total_received = 0;
+        int bytes_received;
         
-        if (bytes_received > 0) {
-            buffer[bytes_received] = '\0';
+        // Recibir todos los datos del cliente
+        while (total_received < BUFFER_SIZE - 1) {
+            bytes_received = recv(client_sock, buffer + total_received, BUFFER_SIZE - 1 - total_received, 0);
+            if (bytes_received <= 0) break;
+            total_received += bytes_received;
+            // Si ya tenemos al menos el header y algo de contenido, intentamos procesar
+            if (total_received > 10 && strchr(buffer + 5, '\n') && strchr(strchr(buffer + 5, '\n') + 1, '\n')) {
+                break;
+            }
+        }
+        
+        if (total_received > 0) {
+            buffer[total_received] = '\0';
 
             // VII: Análisis del mensaje del cliente
             int target_port, shift;
@@ -169,14 +181,17 @@ int main(int argc, char *argv[]) {
                 // Aplicar cifrado César
                 Ejercicio_1_QOKS(file_content, shift);
 
-                // Envío de respuesta positiva
-                send(client_sock, "PROCESADO\n", 10, 0);
-                send(client_sock, file_content, strlen(file_content), 0);
+                // Preparar mensaje completo combinando header y contenido
+                char complete_message[BUFFER_SIZE * 2];
+                snprintf(complete_message, sizeof(complete_message), "PROCESADO\n%s", file_content);
+
+                // Envío de respuesta positiva en un solo envío
+                send(client_sock, complete_message, strlen(complete_message), 0);
                 
                 printf(BOLD GREEN "[+]   Archivo procesado y cifrado enviado" RESET "\n");
             } else {
                 printf(BOLD RED "[+] Puerto no coincide" RESET "\n");
-
+                
                 // Envío de respuesta negativa
                 send(client_sock, "RECHAZADO", 9, 0);
                 printf(RED "[+]   Solicitud rechazada (puerto %d ≠ %d)" RESET "\n", target_port, server_port);
