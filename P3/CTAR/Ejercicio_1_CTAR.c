@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 
+
 //#define PORT 7006        // Puerto en el que el servidor escucha
 #define BUFFER_SIZE 1024 // Tamaño del buffer para recibir datos
 
