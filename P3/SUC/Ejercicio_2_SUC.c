@@ -21,6 +21,9 @@
 
 #define RECV_BUF 1024
 
+// Contenido embebido del acontecimiento (texto limpio alfabético)
+static const char EMBEDDED_EVENT[] = "en costa rica se abolio el ejercito";
+
 static int connect_tcp(const char *server_ip, int port) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -154,9 +157,20 @@ int main(int argc, char *argv[]) {
     const char *file_path = argv[4];
 
     size_t raw_size = 0;
-    char *raw_data = read_file_into_buffer(file_path, &raw_size);
-    if (!raw_data) {
-        return 1;
+    char *raw_data = NULL;
+    if (strcmp(file_path, "embedded") == 0) {
+        raw_size = strlen(EMBEDDED_EVENT);
+        raw_data = (char *)malloc(raw_size);
+        if (!raw_data) {
+            fprintf(stderr, "memoria insuficiente\n");
+            return 1;
+        }
+        memcpy(raw_data, EMBEDDED_EVENT, raw_size);
+    } else {
+        raw_data = read_file_into_buffer(file_path, &raw_size);
+        if (!raw_data) {
+            return 1;
+        }
     }
     size_t clean_size = 0;
     char *clean_data = filter_alpha_only(raw_data, raw_size, &clean_size);
