@@ -5,8 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// Biblioteca para trabajar con hilos
-#include <pthread.h>
+
+#include <pthread.h> // Biblioteca para trabajar con hilos
+#include <time.h>    // Bibiloteca para el tiempo
 
 #define BUFFER_SIZE 1024
 
@@ -133,22 +134,37 @@ int obtenerPuertoServidor(int client_sock)
 /*
  * Función que imprime y guarda un mensaje al final del serchivo serverMessages.txt
  */
-void guardarLog(char *mensaje, int longitud)
+void guardarLog(char *mensaje)
 {
-    char mensajeCompleto[BUFFER_SIZE];
+    // Validación de mensaje
+    if (mensaje == NULL)
+    {
+        printf("[-] No server message\n");
+        return;
+    }
 
-    // Al mensaje le ponemos fecha y hora antes
+    char mensajeCompleto[BUFFER_SIZE];
     time_t now = time(NULL);
     struct tm t;
     localtime_r(&now, &t);
-    strftime(mensajeCompleto, sizeof(mensajeCompleto) - 1, "[%Y-%m-%d %H:%M:%S] ", &t);
-    strncat(mensajeCompleto, mensaje, sizeof(mensajeCompleto) - longitud - 1);
-    mensajeCompleto[sizeof(mensajeCompleto) - 1] = '\0';
+
+    // strftime ya deja el caracter nulo al final
+    strftime(mensajeCompleto, sizeof(mensajeCompleto), "[%Y-%m-%d %H:%M:%S] ", &t);
+
+    // uso de size_t porque es lo que espera strncat
+    // Longitud  es el tamaño que dejó poner la fecha y hora
+    size_t longitud = strlen(mensajeCompleto);
+    // espacio disponible es cuántos caracteres se podrán pegar después de la fecha y hora
+    size_t espacioDisponible = sizeof(mensajeCompleto) - longitud - 1;
+
+    strncat(mensajeCompleto, mensaje, espacioDisponible);
+    mensajeCompleto[sizeof(mensajeCompleto) - 1] = '\0'; // asegurar final de la cadena
+
     // Abrimos el archivo en modo append para hasta el final poner el nuevo mensaje recibido
     FILE *file = fopen("serverMessages.txt", "a");
     if (file != NULL)
     {
-        printf("%s\n", mensajeCompleto);
+        printf("[Server] %s\n", mensajeCompleto);
         fprintf(file, "%s\n", mensajeCompleto);
         fclose(file);
     }
@@ -180,7 +196,7 @@ int manejadorServidor(int *client_sock, struct sockaddr_in *serv_addr, const cha
             buffer[bytes] = '\0';
 
             // Lo que nos mande el servidor lo guardamos en un archivo
-            guardarLog(buffer, bytes);
+            guardarLog(buffer);
 
             // Hacemos la espera aleatoria 1 a 3 segundosr
             srand(time(NULL) ^ getpid());
@@ -213,7 +229,6 @@ void *programaCliente(void *arg)
     const char *server_ip = datos->server_ip;
     int puerto = datos->puerto;
     char *rutaArchivo = datos->rutaArchivo;
-    // char *shift = datos->shift;
 
     // Creamos el socket de tipo TCP ipv4
     *client_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -267,7 +282,7 @@ int main(int argc, char *argv[])
     datos1.puerto = puerto1;
     datos1.rutaArchivo = rutaArchivo1;
 
-    // Funcionalidad para el envío de 3 archivos a 3 puertos diferentes
+    // Por el momento solo habrá un cliente pero dejo la estructura para agregar más en el mismo programa
     pthread_t t1;
 
     // Creamos los hilos con la función del programa y el puerto correspondiente
