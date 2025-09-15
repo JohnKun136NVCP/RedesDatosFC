@@ -17,7 +17,6 @@ struct datos_programa
     const char *server_ip;
     int puerto;
     char *rutaArchivo;
-    char *shift;
 };
 
 void sendFile(const char *filename, int sockfd)
