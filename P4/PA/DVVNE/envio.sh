@@ -6,5 +6,5 @@ NUM_FILES=${#FILES[@]}
 INDEX=$((RANDOM % NUM_FILES))
 FILE=${FILES[$INDEX]}
 echo "Sending $FILE to $SERVER:$PORT"
-./c "$FILE" $SERVER
+./client "$FILE" $SERVER
 
