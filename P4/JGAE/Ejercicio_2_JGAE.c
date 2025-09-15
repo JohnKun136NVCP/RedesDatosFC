@@ -267,27 +267,26 @@ programaServidorLogistico(void *arg)
 int main(int argc, char *argv[])
 {
 
-    /*
-        if (argc != 2)
-        {
-            printf("Type: %s <port1> \n", argv[0]);
-            return 1;
-        }
-    */
+    if (argc != 2)
+    {
+        printf("Type: %s <principal port> \n", argv[0]);
+        return 1;
+    }
 
-    // Funcionalidad para el manejo de 3 clientes
+    // Creamos dos hilos, uno para aceptar conexiones y otro para transferencia de archivos
     pthread_t t1, t2;
-    // pthread_t t3;
 
     // El argumento del programa es un puerto para el servidor
     char *puerto1 = argv[1];
     int puerto2 = atoi(argv[1]);
     puerto2++; // puerto del servidor logístico
 
-    // Creamos los hilos con la función del programa y el puerto correspondiente
+    // Este hilo se encarga de aceptar conexiones y asignarles el otro puerto
     pthread_create(&t1, NULL, programaServidor, puerto1);
 
+    // Este hilo se encarga de la transferencia de archivos
     pthread_create(&t2, NULL, programaServidorLogistico, &puerto2);
+
     // Hacemos que el hilo main espere a que terminen los demás hilos
     pthread_join(t1, NULL);
     pthread_join(t2, NULL);
