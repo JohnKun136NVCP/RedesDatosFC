@@ -123,7 +123,7 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
         close(server_sock);
         return -1;
     }
-    // printf("[+] Client connected\n"); Comento lo de client connected ahorita que ya tenemos 3 servidores
+    return 0;
 }
 
 /**
@@ -142,7 +142,6 @@ int manejadorCliente(int client_sock, int server_sock, int puertoServer)
     send(client_sock, mensaje, strlen(mensaje), 0);
 
     close(client_sock);
-    // close(server_sock);
     return 0;
 }
 
@@ -177,6 +176,10 @@ programaServidor(void *arg)
     // Manejador del cliente
     if (manejadorCliente(client_sock, server_sock, puertoServer) < 0)
         return NULL;
+
+    // Si todo sale normal cerramos el socket y finalizamos el programa
+    close(server_sock);
+    return NULL;
 }
 
 /**
@@ -199,6 +202,15 @@ int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer)
     // recibimos nombre del archivo
     int bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
 
+    // Aquí no estaba verificando que sí hubiéramos recibidos bytes
+    if (bytes <= 0)
+    {
+        printf("[-] Missed file name\n");
+        close(client_sock);
+        close(server_sock);
+        return -1;
+    }
+
     buffer[bytes] = '\0';
     sscanf(buffer, "%s", fileName); // extrae nombre del archivo
 
@@ -207,7 +219,7 @@ int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer)
     // Eliminamos saltos de línea y retornos de carro del nombre del archivo, reemplazándolos por el caracter nulo
     fileName[strcspn(fileName, "\r\n")] = '\0';
 
-    // Abrimos el archivo que vamos a guardar encriptado
+    // Abrimos el archivo que vamos a guardar
     FILE *fp = fopen(fileName, "w");
     if (fp == NULL)
     {
@@ -223,11 +235,12 @@ int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer)
         fwrite(buffer, 1, bytes, fp);
     }
 
+    fclose(fp);
+
     // Avisamos que el archivo fue cifrado
     send(client_sock, "FILE RECEIVED", strlen("FILE RECEIVED"), 0);
     printf("[+][Server %d] File received:\n", puertoServer);
 
-    fclose(fp);
     // Imprimir el archivo cifrado
     imprimirArchivo(fileName);
 
@@ -262,6 +275,10 @@ programaServidorLogistico(void *arg)
     // Manejador del cliente
     if (manejadorClienteTrans(client_sock, server_sock, puertoServer) < 0)
         return NULL;
+
+    // Cerramos socket servidor y finalizamos el programa
+    close(server_sock);
+    return NULL;
 }
 
 int main(int argc, char *argv[])

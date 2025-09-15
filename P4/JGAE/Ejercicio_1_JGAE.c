@@ -62,7 +62,7 @@ int conectarServidor(struct sockaddr_in *serv_addr, int client_sock, const char 
 
 /* Función para autorizar el envío del archivo al servidor y enviarlo si es autorizado respecto a la ruta y el desplazamiento
  */
-void autorizarEnviarArchivo(int client_sock, int puerto, char *rutaArchivo)
+int autorizarEnviarArchivo(int client_sock, int puerto, char *rutaArchivo)
 {
     char mensaje[BUFFER_SIZE];
     char buffer[BUFFER_SIZE] = {0};
@@ -93,17 +93,18 @@ void autorizarEnviarArchivo(int client_sock, int puerto, char *rutaArchivo)
                 buffer[bytes] = '\0';
                 printf("[*] SERVER RESPONSE %d: %s\n", puerto, buffer);
             }
-            close(client_sock);
+            return 0;
         }
         else
         {
             printf("[*] SERVER RESPONSE %d: %s\n", puerto, buffer);
-            close(client_sock);
+            return -1;
         }
     }
     else
     {
         printf("[-] Server connection timeout\n");
+        return -1;
     }
 }
 
@@ -120,7 +121,6 @@ int obtenerPuertoServidor(int client_sock)
     if (bytes <= 0)
     {
         printf("[-] Missed server port\n");
-        close(client_sock);
         return -1;
     }
     buffer[bytes] = '\0';
@@ -204,11 +204,12 @@ int manejadorServidor(int *client_sock, struct sockaddr_in *serv_addr, const cha
             sleep(delay);
 
             // Enviamos el archivo con lo de la práctica pasada
-            autorizarEnviarArchivo(*client_sock, puertoServer, rutaArchivo);
+            return autorizarEnviarArchivo(*client_sock, puertoServer, rutaArchivo);
         }
         else
         {
             printf("[-] Server connection timeout\n");
+            return -1;
         }
     }
     else
@@ -224,6 +225,12 @@ Función principal que ejecutará cada hilo del cliente para conectarse a un ser
 void *programaCliente(void *arg)
 {
     struct datos_programa *datos = (struct datos_programa *)arg;
+    // Validación de argumentos
+    if (datos == NULL)
+    {
+        printf("[-] No program arguments\n");
+        return NULL;
+    }
     int *client_sock = datos->client_sock;
     struct sockaddr_in *serv_addr = datos->serv_addr;
     const char *server_ip = datos->server_ip;
@@ -252,10 +259,19 @@ void *programaCliente(void *arg)
             // Nos conectamos  al puerto obtenido por el server y manejamos el resto del programa
             if (manejadorServidor(client_sock, serv_addr, server_ip, puertoServer, rutaArchivo) == -1)
             {
+                close(*client_sock);
                 return NULL;
             }
         }
         close(*client_sock);
+        return NULL;
+    }
+    else
+    {
+        // Manejamos el error de conexión
+        printf("[-] Conexion failed\n");
+        close(*client_sock);
+        return NULL;
     }
 }
 
