@@ -61,8 +61,8 @@ int recibir(int client_sock, char buffer[], int bytes, size_t bufft){
 
 int main(int argc, char *argv[]) {
         char *server_ip = "192.168.100.59";
-        char *newip;
-        if (argc < 2) {
+        char *newip = "192.168.0.101";
+        if (argc < 3) {
                 printf("Type: %s <archivo> <ip>\n", argv[0]);
                 return 1;
         }
