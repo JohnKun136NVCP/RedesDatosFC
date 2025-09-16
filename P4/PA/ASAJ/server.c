@@ -9,7 +9,19 @@
 #define PUERTO_BASE 49200      // Puerto base donde el servidor escucha la primera conexión 
 #define TAM_BUFFER 1024        // Tamaño del buffer para mensajes, pequeño pero funcional
 
-int main() {
+int main(int argc, char *argv[]) {
+	if (argc < 2) {
+	    fprintf(stderr, "Uso: %s <carpeta_destino>\n", argv[0]);
+	    exit(1);
+	}
+	
+	const char *carpeta_destino = argv[1];
+	
+	// creamos la carpeta si no existe
+	char comando[256];
+	snprintf(comando, sizeof(comando), "mkdir -p %s", carpeta_destino);
+	system(comando);
+	
     int socket_escucha;			// estará siempre escuchando en el PUERTO_BASE para aceptar clientes
     int socket_base;		 // por cada cliente nuevo, se crea temporalmente para enviarle el número del puerto asignado
     struct sockaddr_in dir_servidor, dir_cliente;		// estructuras de dirección para servidor y cliente
@@ -94,7 +106,7 @@ int main() {
 		// como lo vamos a recibir por partes, primero tomamos el nombre y definimos donde lo guardaremos y con qué nombre
 		char nombre_archivo[256];
 		system("mkdir -p Servidor");
-		snprintf(nombre_archivo, sizeof(nombre_archivo), "Servidor/archivo_%d.txt", puerto_asignado);
+		snprintf(nombre_archivo, sizeof(nombre_archivo), "%s/archivo_%d.txt", carpeta_destino, puerto_asignado);
 
 		FILE *f = fopen(nombre_archivo, "w");
 		if(!f){
