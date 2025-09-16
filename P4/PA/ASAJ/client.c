@@ -4,7 +4,8 @@
 #include <string.h>     
 #include <unistd.h>    
 #include <arpa/inet.h> 
-#include <time.h>       
+#include <time.h>  
+#include <netdb.h> // lo usamos para que podamos obtener la IP correspondiente a s01/2/3/4     
 
 #define TAM_BUFFER 65536         // tamaño del buffer para comunicación, lo agrandamos por si toca un .txt largo en el randomized del script
 
@@ -24,33 +25,36 @@ void registrar_evento(const char *estado) {
 }
 
 // función que se encarga de la creación de un socket y la conexión al servidor
-int conectar_a(const char *ip, int puerto) {
+int conectar_a(const char *host, int puerto) {
     int socket_cliente;
     struct sockaddr_in dir_servidor;
+    struct hostent *servidor;
 
-    // creamos el socket familia IPv4 y TCP
+    // crear socket
     if ((socket_cliente = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Error al crear socket del cliente");
         exit(1);
     }
 
-    memset(&dir_servidor, 0, sizeof(dir_servidor));
-    dir_servidor.sin_family = AF_INET;             
-    dir_servidor.sin_port = htons(puerto);        
-
-    // convertimos dirección IP desde string a formato binario para que nos entienda
-    if (inet_pton(AF_INET, ip, &dir_servidor.sin_addr) <= 0) {
-        perror("Dirección IP inválida");
+    // resolver nombre de host (sirve para alias tipo s01/2/3/4 o IP directa)
+    servidor = gethostbyname(host);
+    if (servidor == NULL) {
+        fprintf(stderr, "Error: no se pudo resolver el host %s\n", host);
         exit(1);
     }
 
-    // intentamos conectar con el servidor
+    memset(&dir_servidor, 0, sizeof(dir_servidor));
+    dir_servidor.sin_family = AF_INET;
+    dir_servidor.sin_port = htons(puerto);
+    memcpy(&dir_servidor.sin_addr, servidor->h_addr, servidor->h_length);
+
+    // ahora sí conectar
     if (connect(socket_cliente, (struct sockaddr*)&dir_servidor, sizeof(dir_servidor)) < 0) {
         perror("Error al conectar con el servidor");
         exit(1);
     }
 
-    return socket_cliente;  // devolvemos el descriptor de socket ya conectado
+    return socket_cliente;
 }
 
 // función auxiliar que lee archivo para enviar 
