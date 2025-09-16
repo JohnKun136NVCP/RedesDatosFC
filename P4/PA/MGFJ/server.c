@@ -9,6 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <netdb.h>
 
 #define CTRL_PORT        49200     // Puerto de control
 #define FIRST_DATA_PORT  49201     // Primer puerto de datos
@@ -26,7 +27,21 @@ static int bind_listen(int port, const char *bind_ip) {
     struct sockaddr_in a; memset(&a, 0, sizeof(a));
     a.sin_family = AF_INET;
     a.sin_port   = htons(port);
-    a.sin_addr.s_addr = bind_ip ? inet_addr(bind_ip) : htonl(INADDR_ANY);
+
+    if (!bind_ip) {
+        a.sin_addr.s_addr = htonl(INADDR_ANY);
+    } else {
+        struct addrinfo hints, *res = NULL;
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        if (getaddrinfo(bind_ip, NULL, &hints, &res) != 0 || !res) {
+            fprintf(stderr, "getaddrinfo failed for '%s'\n", bind_ip);
+            exit(1);
+        }
+        a.sin_addr = ((struct sockaddr_in*)res->ai_addr)->sin_addr;
+        freeaddrinfo(res);
+    }
 
     if (bind(fd, (struct sockaddr*)&a, sizeof(a)) < 0) { perror("bind"); exit(1); }
     if (listen(fd, BACKLOG) < 0) { perror("listen"); exit(1); }
@@ -44,7 +59,7 @@ static void send_all(int fd, const char *s) {
 }
 
 int main(int argc, char **argv) {
-    const char *BIND_IP = "192.168.0.1";           // IP local donde escuchar
+    const char *BIND_IP = (argc > 1) ? argv[1] : NULL;           // IP/alias donde escuchar
     int ctrl_fd = bind_listen(CTRL_PORT, BIND_IP); // Socket de control
     fprintf(stderr, "[CTRL] Escuchando en %s:%d\n", BIND_IP ? BIND_IP : "0.0.0.0", CTRL_PORT);
 

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <netdb.h>
 
 #define CTRL_PORT 49200   // Puerto de control
 #define BUFSZ     4096    // Tamaño de buffer para envío
@@ -44,11 +45,16 @@ static int dial_ip(const char *ip, int port) {
     a.sin_port   = htons(port);
 
     if (inet_pton(AF_INET, ip, &a.sin_addr) != 1) {
-        a.sin_addr.s_addr = inet_addr(ip);
-        if (a.sin_addr.s_addr == INADDR_NONE) {
+        struct addrinfo hints, *res = NULL;
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        if (getaddrinfo(ip, NULL, &hints, &res) != 0 || !res) {
             fprintf(stderr, "IP/host inválido: %s\n", ip);
             exit(1);
         }
+        a.sin_addr = ((struct sockaddr_in*)res->ai_addr)->sin_addr;
+        freeaddrinfo(res);
     }
     if (connect(fd, (struct sockaddr*)&a, sizeof(a)) < 0) {
         perror("connect"); exit(1);
