@@ -1,3 +1,5 @@
+
+#define _POSIX_C_SOURCE 200112L
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -6,8 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <netdb.h>   // Biblioteca para llamada al sistema para resolver alias
 #include <pthread.h> // Biblioteca para trabajar con hilos
 #include <time.h>    // Bibiloteca para el tiempo
+#include <errno.h>
 
 #define BUFFER_SIZE 1024
 
@@ -43,21 +47,72 @@ void sendFile(const char *filename, int sockfd)
 
 /* Función para configuración del socket y conexión al servidor
  */
-int conectarServidor(struct sockaddr_in *serv_addr, int client_sock, const char *server_ip, int puerto)
+int conectarServidor(struct sockaddr_in *serv_addr, int client_sock,
+                     const char *server_ip, int puerto)
 {
-    // Flechas porque son apuntadores
+    // Inicializa estructura destino
+    memset(serv_addr, 0, sizeof(*serv_addr));
     serv_addr->sin_family = AF_INET;
     serv_addr->sin_port = htons(puerto);
     serv_addr->sin_addr.s_addr = inet_addr(server_ip);
-    // intentamos conectarnos al socket de servidor usando nuestro socket de cliente con nuestro socket configurado para conexiones
-    if (connect(client_sock, (struct sockaddr *)serv_addr, sizeof(*serv_addr)) < 0)
+
+    // conexión por ip XXX.XXX.XXX.XXX
+    if (connect(client_sock, (struct sockaddr *)serv_addr, sizeof(*serv_addr)) == 0)
+        return 0; // éxito
+
+    // Conexión por alias
+    /*
+     * Esta parte tuve que usar IA porque no encontraba cómo resolver los alias. Pero aunque usé inteligencia artificial, luego me puse a investigar en la documentación el funcionamiento dde todo.
+     * La idea es que si la conexión por IP numérica falla, lo que se intenta es resolver el alias con getaddrinfo que devuelve una lista de posibilidades y por lo que encontré no solo busca en host, también busca en otro directorios como DNS
+     * El truco muy inteligente que se hace es que desde la búsqueda ya le inyectas las preferencias que va a querer, entonces el resulado de haber sido encontrado ya traerá el alias resuelto y la configuración que se quiere
+     * De ahí ya solo es recorrer la lista a irse itnentando conectar, el que deje conectar va a ser el que se use y ya solo queda guardarlo en el apuntador que nos pasaron, eso se hace con memcpy
+     * La verdad el funcionamientoo es muy sencillo pero creo que son cosas que si no sabes las funciones que se deben usar no hay forma de llegar a la solución.
+     */
+
+    // Convertir puerto a cadena
+    char portstr[16];
+    snprintf(portstr, sizeof(portstr), "%d", puerto);
+
+    // La función que quiero usar para los alias es getaddrinfo para resolver el alias
+    // esta estructura es para definir las preferencias de la búsqueda que haremos
+
+    // Con hints vamos a poner las preferencias, res se van a guardar los resultados y p lo usaremos para iterar los resultados
+    struct addrinfo hints, *res = NULL, *p = NULL;
+    memset(&hints, 0, sizeof(hints));
+    // Aunque no es necesario especificar esta configuración, es mejor porque ya automáticamente todos los resultados van a estar ipv4 y tcp, además de la dirección que habrá conseguido (si logra resolverla)
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    // obtenemos los resultados
+    int rc = getaddrinfo(server_ip, portstr, &hints, &res);
+    if (rc != 0 || !res)
     {
-        perror("connect");
-        // Si el puerto está cerrado o no hay servidor avisamos
-        printf("[*] CONNECTION TO SERVER %d failed\n", puerto);
+        fprintf(stderr, "getaddrinfo(%s,%s): %s\n",
+                server_ip, portstr, gai_strerror(rc));
+        fprintf(stderr, "[*] CONNECTION TO SERVER %d failed\n", puerto);
         return 1;
     }
-    return 0;
+
+    // por defecto devolvemos un error
+    int status = 1;
+    for (p = res; p != NULL; p = p->ai_next)
+    {
+        // para cada uno de los resultados vamos a intentar conectarnos con la sockaddr
+        if (connect(client_sock, p->ai_addr, p->ai_addrlen) == 0)
+        {
+            // Copiamos porque esta función de conexión es de paso por valor
+            memcpy(serv_addr, p->ai_addr, sizeof(*serv_addr));
+            status = 0; // éxito
+            break;
+        }
+    }
+    if (status != 0)
+    {
+        perror("connection failed");
+        fprintf(stderr, "[*] CONNECTION TO SERVER %d failed\n", puerto);
+    }
+    freeaddrinfo(res);
+    return status; // 0 = ok, 1 = error
 }
 
 /* Función para autorizar el envío del archivo al servidor y enviarlo si es autorizado respecto a la ruta y el desplazamiento
