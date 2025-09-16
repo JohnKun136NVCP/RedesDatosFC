@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h> //
+#include <netdb.h>
 
 #define PORT 49200
 #define BUFFER_SIZE 8192 // Aumentado para archivos más grandes
