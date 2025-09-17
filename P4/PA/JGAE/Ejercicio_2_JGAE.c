@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200112L
+
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -10,8 +12,10 @@
 
 // Biblioteca para trabajar con hilos
 #include <pthread.h>
+#include <netdb.h>
 
 #define BUFFER_SIZE 1024 // Tama~no del buffer para recibir datos
+#define PUERTOSERVER 49200
 
 void sendFile(const char *filename, int sockfd)
 {
@@ -74,25 +78,60 @@ int crearSocketIPv4TCP()
 /*
 Función para configurar el socket servidor, debe recibir un puntero a la estrcutura para que sí se modifique y no sea paso por valor
 */
-int configurarEnlazarSocket(struct sockaddr_in *server_addr, int puertoServer, int server_sock)
+int configurarEnlazarSocket(struct sockaddr_in *server_addr, int puertoServer, int server_sock, char *ipChar)
 {
     // Configuramos el socket
     server_addr->sin_family = AF_INET;
     server_addr->sin_port = htons(puertoServer);
-    server_addr->sin_addr.s_addr = INADDR_ANY;
+    server_addr->sin_addr.s_addr = inet_addr(ipChar);
 
     // reuso del puerto
     int one = 1;
     setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 
-    // Enlazamos el socket y hacemos que escuche en el puerto deseado
-    if (bind(server_sock, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0)
+    /* Si se descomenta esto también acepta ip numéricas, así conectado solo acepta alias
+    // Intentamos enlazar con ip numérica
+    if (bind(server_sock, (struct sockaddr *)server_addr, sizeof(*server_addr)) == 0)
+        return 0; // éxito
+    */
+
+    // Si no se pudo tenemos que resolver el alias
+    // Convertir puerto a cadena
+    char portstr[16];
+    snprintf(portstr, sizeof(portstr), "%d", puertoServer);
+
+    struct addrinfo hints, *res = NULL, *p = NULL;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    int rc = getaddrinfo(ipChar, portstr, &hints, &res);
+    if (rc != 0 || !res)
+    {
+        fprintf(stderr, "[*] CONNECTION TO SERVER %d failed\n", puertoServer);
+        return 1;
+    }
+
+    int status = 1;
+    for (p = res; p != NULL; p = p->ai_next)
+    {
+        // para cada uno de los resultados vamos a intentar enlazar el socket
+        if (bind(server_sock, (struct sockaddr *)server_addr, sizeof(*server_addr)) == 0)
+        {
+            // Copiamos porque esta función de enlace es de paso por valor
+            memcpy(server_addr, p->ai_addr, p->ai_addrlen);
+            status = 0; // éxito
+            break;
+        }
+    }
+    if (status != 0)
     {
         perror("[-] Error binding");
         close(server_sock);
         return -1;
     }
-    return 0;
+    freeaddrinfo(res);
+    return status;
 }
 
 /*
@@ -112,7 +151,7 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
         close(server_sock);
         return -1;
     }
-    printf("[+] Server listening port %d...\n", puertoServer);
+    // printf("[+] Server listening port %d...\n", puertoServer);
 
     // Bloqueamos esperando a que un cliente se conecte
     addr_size = sizeof(*client_addr);
@@ -129,7 +168,7 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
 /**
  * Función que maneja la conexión inicial con el cliente y la asignación de puerto para transferencia
  */
-int manejadorCliente(int client_sock, int server_sock, int puertoServer)
+int manejadorCliente(int client_sock, int server_sock, int puertoServer, char *ipChar)
 {
     // Buffer para transferencia de datos
     char buffer[BUFFER_SIZE] = {0};
@@ -140,8 +179,12 @@ int manejadorCliente(int client_sock, int server_sock, int puertoServer)
     char mensaje[BUFFER_SIZE];
     sprintf(mensaje, "%d", puertoClient);
     send(client_sock, mensaje, strlen(mensaje), 0);
-
     close(client_sock);
+
+    // Ejecutamos el programa de transferencia en un nuevo hilo
+    pthread_t t;
+    pthread_create(&t, NULL, programaServidorLogistico, ipChar);
+    pthread_join(t, NULL);
     return 0;
 }
 
@@ -149,12 +192,10 @@ int manejadorCliente(int client_sock, int server_sock, int puertoServer)
  * Función que contiene todo el programa del servidor.
  */
 void *
-
 programaServidor(void *arg)
 {
     // Casteamos los argumentos del tipo genérico al array de argumentos
-    char *puertoChar = (char *)arg;
-    int puertoServer = atoi(puertoChar);
+    char *ipChar = (char *)arg;
 
     // enteros representación de los sockets
     int server_sock, client_sock;
@@ -166,15 +207,15 @@ programaServidor(void *arg)
         return NULL;
 
     // Configuramos el socket pasando la dirección de memoria donde guardamos la configuración
-    if (configurarEnlazarSocket(&server_addr, puertoServer, server_sock) < 0)
+    if (configurarEnlazarSocket(&server_addr, PUERTOSERVER, server_sock, ipChar) < 0)
         return NULL;
 
     // Ponemos al socket a escuchar en el puerto deseado
-    if (escucharAceptarServidor(server_sock, puertoServer, &client_sock, &client_addr) < 0)
+    if (escucharAceptarServidor(server_sock, PUERTOSERVER, &client_sock, &client_addr) < 0)
         return NULL;
 
     // Manejador del cliente
-    if (manejadorCliente(client_sock, server_sock, puertoServer) < 0)
+    if (manejadorCliente(client_sock, server_sock, PUERTOSERVER, ipChar) < 0)
         return NULL;
 
     // Si todo sale normal cerramos el socket y finalizamos el programa
@@ -237,11 +278,11 @@ int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer)
 
     fclose(fp);
 
-    // Avisamos que el archivo fue cifrado
+    // Avisamos que el archivo fue guardado
     send(client_sock, "FILE RECEIVED", strlen("FILE RECEIVED"), 0);
     printf("[+][Server %d] File received:\n", puertoServer);
 
-    // Imprimir el archivo cifrado
+    // Imprimir el archivo guardado
     imprimirArchivo(fileName);
 
     close(client_sock);
@@ -253,7 +294,7 @@ void *
 programaServidorLogistico(void *arg)
 {
     // Casteamos los argumentos del tipo genérico al array de argumentos
-    int puertoServer = *((int *)arg);
+    char *ipChar = (char *)arg;
 
     // enteros representación de los sockets
     int server_sock, client_sock;
@@ -265,15 +306,15 @@ programaServidorLogistico(void *arg)
         return NULL;
 
     // Configuramos el socket pasando la dirección de memoria donde guardamos la configuración
-    if (configurarEnlazarSocket(&server_addr, puertoServer, server_sock) < 0)
+    if (configurarEnlazarSocket(&server_addr, PUERTOSERVER, server_sock, ipChar) < 0)
         return NULL;
 
     // Ponemos al socket a escuchar en el puerto deseado
-    if (escucharAceptarServidor(server_sock, puertoServer, &client_sock, &client_addr) < 0)
+    if (escucharAceptarServidor(server_sock, PUERTOSERVER, &client_sock, &client_addr) < 0)
         return NULL;
 
     // Manejador del cliente
-    if (manejadorClienteTrans(client_sock, server_sock, puertoServer) < 0)
+    if (manejadorClienteTrans(client_sock, server_sock, PUERTOSERVER) < 0)
         return NULL;
 
     // Cerramos socket servidor y finalizamos el programa
@@ -286,26 +327,18 @@ int main(int argc, char *argv[])
 
     if (argc != 2)
     {
-        printf("Type: %s <principal port> \n", argv[0]);
+        printf("Type: %s <IP alias> \n", argv[0]);
         return 1;
     }
 
     // Creamos dos hilos, uno para aceptar conexiones y otro para transferencia de archivos
-    pthread_t t1, t2;
-
-    // El argumento del programa es un puerto para el servidor
-    char *puerto1 = argv[1];
-    int puerto2 = atoi(argv[1]);
-    puerto2++; // puerto del servidor logístico
+    pthread_t t;
 
     // Este hilo se encarga de aceptar conexiones y asignarles el otro puerto
-    pthread_create(&t1, NULL, programaServidor, puerto1);
-
-    // Este hilo se encarga de la transferencia de archivos
-    pthread_create(&t2, NULL, programaServidorLogistico, &puerto2);
+    pthread_create(&t, NULL, programaServidor, argv[1]);
 
     // Hacemos que el hilo main espere a que terminen los demás hilos
-    pthread_join(t1, NULL);
-    pthread_join(t2, NULL);
+    pthread_join(t, NULL);
+
     return 0;
 }

@@ -60,15 +60,6 @@ int conectarServidor(struct sockaddr_in *serv_addr, int client_sock,
     if (connect(client_sock, (struct sockaddr *)serv_addr, sizeof(*serv_addr)) == 0)
         return 0; // éxito
 
-    // Conexión por alias
-    /*
-     * Esta parte tuve que usar IA porque no encontraba cómo resolver los alias. Pero aunque usé inteligencia artificial, luego me puse a investigar en la documentación el funcionamiento dde todo.
-     * La idea es que si la conexión por IP numérica falla, lo que se intenta es resolver el alias con getaddrinfo que devuelve una lista de posibilidades y por lo que encontré no solo busca en host, también busca en otro directorios como DNS
-     * El truco muy inteligente que se hace es que desde la búsqueda ya le inyectas las preferencias que va a querer, entonces el resulado de haber sido encontrado ya traerá el alias resuelto y la configuración que se quiere
-     * De ahí ya solo es recorrer la lista a irse itnentando conectar, el que deje conectar va a ser el que se use y ya solo queda guardarlo en el apuntador que nos pasaron, eso se hace con memcpy
-     * La verdad el funcionamientoo es muy sencillo pero creo que son cosas que si no sabes las funciones que se deben usar no hay forma de llegar a la solución.
-     */
-
     // Convertir puerto a cadena
     char portstr[16];
     snprintf(portstr, sizeof(portstr), "%d", puerto);
@@ -87,8 +78,6 @@ int conectarServidor(struct sockaddr_in *serv_addr, int client_sock,
     int rc = getaddrinfo(server_ip, portstr, &hints, &res);
     if (rc != 0 || !res)
     {
-        fprintf(stderr, "getaddrinfo(%s,%s): %s\n",
-                server_ip, portstr, gai_strerror(rc));
         fprintf(stderr, "[*] CONNECTION TO SERVER %d failed\n", puerto);
         return 1;
     }
