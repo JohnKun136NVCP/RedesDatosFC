@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
 {
     if (argc != 4)
     {
-        printf("Type: %s <server_ip> <port1> <file_path>\n", argv[0]);
+        printf("Type: %s <server_alias> <port> <file_path>\n", argv[0]);
         return 1;
     }
 

@@ -46,7 +46,7 @@ void imprimirArchivo(const char *filename)
     FILE *fp = fopen(filename, "r");
     if (fp == NULL)
     {
-        perror("[+] Server cannot open the encrypted file");
+        perror("[+] Server cannot open the file");
         return;
     }
     char buffer[BUFFER_SIZE];
@@ -80,6 +80,7 @@ Función para configurar el socket servidor, debe recibir un puntero a la estrcu
 */
 int configurarEnlazarSocket(struct sockaddr_in *server_addr, int puertoServer, int server_sock, char *ipChar)
 {
+
     // Configuramos el socket
     server_addr->sin_family = AF_INET;
     server_addr->sin_port = htons(puertoServer);
@@ -151,7 +152,8 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
         close(server_sock);
         return -1;
     }
-    printf("[+] Server listening port %d...\n", puertoServer);
+    // Lo comento porque por el momento no estaremos escuchando puertos
+    // printf("[+] Server listening port %d...\n", puertoServer);
 
     // Bloqueamos esperando a que un cliente se conecte
     addr_size = sizeof(*client_addr);
@@ -170,6 +172,12 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
  */
 int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer, char *ipChar)
 {
+    // para guardar el directorio home del usuario
+    const char *homedir;
+    if ((homedir = getenv("HOME")) == NULL)
+    {
+        homedir = ".";
+    }
 
     // Le enviiamos nuestro estado al cliente
     char *mensaje = "SERVER WAITING";
@@ -202,8 +210,13 @@ int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer, ch
     // Eliminamos saltos de línea y retornos de carro del nombre del archivo, reemplazándolos por el caracter nulo
     fileName[strcspn(fileName, "\r\n")] = '\0';
 
+    // Construimos la ruta completa con el home
+    // Construir la ruta completa: $HOME/ipChar/fileName
+    char nameComplete[BUFFER_SIZE];
+    snprintf(nameComplete, sizeof(nameComplete), "%s/%s/%s", homedir, ipChar, fileName);
+
     // Abrimos el archivo que vamos a guardar
-    FILE *fp = fopen(fileName, "w");
+    FILE *fp = fopen(nameComplete, "w");
     if (fp == NULL)
     {
         perror("[-] Error to open the file");
@@ -225,7 +238,7 @@ int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer, ch
     printf("[+][Server %d] File received:\n", puertoServer);
 
     // Imprimir el archivo guardado
-    imprimirArchivo(fileName);
+    imprimirArchivo(nameComplete);
 
     close(client_sock);
     close(server_sock);
