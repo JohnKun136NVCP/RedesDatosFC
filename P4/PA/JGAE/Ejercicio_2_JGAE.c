@@ -95,7 +95,7 @@ int configurarEnlazarSocket(struct sockaddr_in *server_addr, int puertoServer, i
         return 0; // éxito
     */
 
-    // Si no se pudo tenemos que resolver el alias
+    // Resolvemos alias
     // Convertir puerto a cadena
     char portstr[16];
     snprintf(portstr, sizeof(portstr), "%d", puertoServer);
@@ -108,19 +108,19 @@ int configurarEnlazarSocket(struct sockaddr_in *server_addr, int puertoServer, i
     int rc = getaddrinfo(ipChar, portstr, &hints, &res);
     if (rc != 0 || !res)
     {
-        fprintf(stderr, "[*] CONNECTION TO SERVER %d failed\n", puertoServer);
-        return 1;
+        fprintf(stderr, "[*] COULDNT RESOLVE %s:%d\n", ipChar, puertoServer);
+        return -1;
     }
 
     int status = 1;
     for (p = res; p != NULL; p = p->ai_next)
     {
         // para cada uno de los resultados vamos a intentar enlazar el socket
-        if (bind(server_sock, (struct sockaddr *)server_addr, sizeof(*server_addr)) == 0)
+        if (bind(server_sock, p->ai_addr, p->ai_addrlen) == 0)
         {
-            // Copiamos porque esta función de enlace es de paso por valor
-            memcpy(server_addr, p->ai_addr, p->ai_addrlen);
-            status = 0; // éxito
+            // guardar la sockaddr elegida en server_addr (que es sockaddr_in)
+            memcpy(server_addr, p->ai_addr, sizeof(*server_addr));
+            status = 0;
             break;
         }
     }
@@ -151,7 +151,7 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
         close(server_sock);
         return -1;
     }
-    // printf("[+] Server listening port %d...\n", puertoServer);
+    printf("[+] Server listening port %d...\n", puertoServer);
 
     // Bloqueamos esperando a que un cliente se conecte
     addr_size = sizeof(*client_addr);
@@ -166,67 +166,9 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
 }
 
 /**
- * Función que maneja la conexión inicial con el cliente y la asignación de puerto para transferencia
- */
-int manejadorCliente(int client_sock, int server_sock, int puertoServer, char *ipChar)
-{
-    // Buffer para transferencia de datos
-    char buffer[BUFFER_SIZE] = {0};
-    // Puerto que le vamos a dar al cliente par que se conecte
-    int puertoClient = ++puertoServer;
-
-    // Formateamos a cadena el puerto y se lo enviamos
-    char mensaje[BUFFER_SIZE];
-    sprintf(mensaje, "%d", puertoClient);
-    send(client_sock, mensaje, strlen(mensaje), 0);
-    close(client_sock);
-
-    // Ejecutamos el programa de transferencia en un nuevo hilo
-    pthread_t t;
-    pthread_create(&t, NULL, programaServidorLogistico, ipChar);
-    pthread_join(t, NULL);
-    return 0;
-}
-
-/**
- * Función que contiene todo el programa del servidor.
- */
-void *
-programaServidor(void *arg)
-{
-    // Casteamos los argumentos del tipo genérico al array de argumentos
-    char *ipChar = (char *)arg;
-
-    // enteros representación de los sockets
-    int server_sock, client_sock;
-    // Estructura definición de la dirección de los sockets
-    struct sockaddr_in server_addr, client_addr;
-
-    // Crear el socket IPv4 TCP:
-    if ((server_sock = crearSocketIPv4TCP()) < 0)
-        return NULL;
-
-    // Configuramos el socket pasando la dirección de memoria donde guardamos la configuración
-    if (configurarEnlazarSocket(&server_addr, PUERTOSERVER, server_sock, ipChar) < 0)
-        return NULL;
-
-    // Ponemos al socket a escuchar en el puerto deseado
-    if (escucharAceptarServidor(server_sock, PUERTOSERVER, &client_sock, &client_addr) < 0)
-        return NULL;
-
-    // Manejador del cliente
-    if (manejadorCliente(client_sock, server_sock, PUERTOSERVER, ipChar) < 0)
-        return NULL;
-
-    // Si todo sale normal cerramos el socket y finalizamos el programa
-    close(server_sock);
-    return NULL;
-}
-
-/**
  * Función que maneja la conexión para transferencia de información.
  */
-int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer)
+int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer, char *ipChar)
 {
 
     // Le enviiamos nuestro estado al cliente
@@ -295,6 +237,65 @@ programaServidorLogistico(void *arg)
 {
     // Casteamos los argumentos del tipo genérico al array de argumentos
     char *ipChar = (char *)arg;
+    int puertoNuevo = PUERTOSERVER + 1;
+
+    // enteros representación de los sockets
+    int server_sock, client_sock;
+    // Estructura definición de la dirección de los sockets
+    struct sockaddr_in server_addr, client_addr;
+
+    // Crear el socket IPv4 TCP:
+    if ((server_sock = crearSocketIPv4TCP()) < 0)
+        return NULL;
+
+    // Configuramos el socket pasando la dirección de memoria donde guardamos la configuración
+    if (configurarEnlazarSocket(&server_addr, puertoNuevo, server_sock, ipChar) < 0)
+        return NULL;
+
+    // Ponemos al socket a escuchar en el puerto deseado
+    if (escucharAceptarServidor(server_sock, puertoNuevo, &client_sock, &client_addr) < 0)
+        return NULL;
+
+    // Manejador del cliente
+    if (manejadorClienteTrans(client_sock, server_sock, puertoNuevo, ipChar) < 0)
+        return NULL;
+
+    // Cerramos socket servidor y finalizamos el programa
+    close(server_sock);
+    return NULL;
+}
+
+/**
+ * Función que maneja la conexión inicial con el cliente y la asignación de puerto para transferencia
+ */
+int manejadorCliente(int client_sock, int server_sock, int puertoServer, char *ipChar)
+{
+    // Buffer para transferencia de datos
+    char buffer[BUFFER_SIZE] = {0};
+    // Puerto que le vamos a dar al cliente par que se conecte
+    int puertoClient = ++puertoServer;
+
+    // Formateamos a cadena el puerto y se lo enviamos
+    char mensaje[BUFFER_SIZE];
+    sprintf(mensaje, "%d", puertoClient);
+    send(client_sock, mensaje, strlen(mensaje), 0);
+    close(client_sock);
+
+    // Ejecutamos el programa de transferencia en un nuevo hilo
+    pthread_t t;
+    pthread_create(&t, NULL, programaServidorLogistico, ipChar);
+    pthread_join(t, NULL);
+    return 0;
+}
+
+/**
+ * Función que contiene todo el programa del servidor.
+ */
+void *
+programaServidor(void *arg)
+{
+    // Casteamos los argumentos del tipo genérico al array de argumentos
+    char *ipChar = (char *)arg;
 
     // enteros representación de los sockets
     int server_sock, client_sock;
@@ -314,10 +315,10 @@ programaServidorLogistico(void *arg)
         return NULL;
 
     // Manejador del cliente
-    if (manejadorClienteTrans(client_sock, server_sock, PUERTOSERVER) < 0)
+    if (manejadorCliente(client_sock, server_sock, PUERTOSERVER, ipChar) < 0)
         return NULL;
 
-    // Cerramos socket servidor y finalizamos el programa
+    // Si todo sale normal cerramos el socket y finalizamos el programa
     close(server_sock);
     return NULL;
 }

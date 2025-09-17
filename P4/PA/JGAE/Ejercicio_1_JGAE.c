@@ -56,9 +56,11 @@ int conectarServidor(struct sockaddr_in *serv_addr, int client_sock,
     serv_addr->sin_port = htons(puerto);
     serv_addr->sin_addr.s_addr = inet_addr(server_ip);
 
+    /* Parte comentada para conexión por ip numérica
     // conexión por ip XXX.XXX.XXX.XXX
     if (connect(client_sock, (struct sockaddr *)serv_addr, sizeof(*serv_addr)) == 0)
         return 0; // éxito
+    */
 
     // Convertir puerto a cadena
     char portstr[16];
@@ -78,7 +80,7 @@ int conectarServidor(struct sockaddr_in *serv_addr, int client_sock,
     int rc = getaddrinfo(server_ip, portstr, &hints, &res);
     if (rc != 0 || !res)
     {
-        fprintf(stderr, "[*] CONNECTION TO SERVER %d failed\n", puerto);
+        fprintf(stderr, "[*] No se pudo resolver el alias %s:%d\n", server_ip, puerto);
         return 1;
     }
 
@@ -288,6 +290,7 @@ void *programaCliente(void *arg)
         perror("[-] Error to create the socket");
         return NULL;
     }
+    printf("[*] Connecting to server %s:%d\n", server_ip, puerto);
     if (conectarServidor(serv_addr, *client_sock, server_ip, puerto) != 1)
     {
         // Obtenemos el puerto al que el servidor nos manda a conectarnos:
