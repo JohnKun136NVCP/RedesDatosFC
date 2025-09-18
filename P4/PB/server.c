@@ -12,6 +12,7 @@
 #define BUFFER_SIZE 1024
 #define server_port 49200  // Puerto base 
 
+//serverB.c
 
 /*
     Función para guardar archivo en el directorio del servidor
