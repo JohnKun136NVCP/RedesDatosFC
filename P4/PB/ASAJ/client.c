@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
   const char *ALIAS_PROPIO = argv[1];
   int PUERTO_BASE = atoi(argv[2]);
   const char *ARCHIVO = argv[3];
+  srand(time(NULL)); //  semilla para rand()
 
   // agregamos todos los alias que hemos establecido
   const char *alias_servidores[] = {"s01", "s02", "s03", "s04"};
@@ -145,6 +146,15 @@ int main(int argc, char *argv[]) {
       registrar_evento(mensaje);
       continue;
     }
+
+    // esperamos un tiempo aleatorio antes de mandar archivo
+    int espera = (rand() % 5) + 1; // entre 1 y 5 segundos
+    char mensaje_espera[128];
+    snprintf(mensaje_espera, sizeof(mensaje_espera),
+             "Esperando %d segundos antes de enviar a %s", espera,
+             alias_servidores[i]);
+    registrar_evento(mensaje_espera);
+    sleep(espera);
 
     // leemos el archivo y se lo vamos enviando
     char buffer_archivo[TAM_BUFFER];
