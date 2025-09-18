@@ -13,7 +13,9 @@
 #define server_port 49200  // Puerto base 
 
 
-// Función para guardar archivo en el directorio del servidor
+/*
+    Función para guardar archivo en el directorio del servidor
+*/
 void saveFile(const char *server_name, const char *filename, const char *content) {
     char file_path[256];
     char *home_dir = getenv("HOME");
@@ -32,7 +34,7 @@ void saveFile(const char *server_name, const char *filename, const char *content
 
 /*
     Función principal para conectar el servidor en el puerto 49200 y asignar puertos dinámicos a los clientes
-    para recibir archivos y guardarlos en el directorio correspondiente (s01 o s02)
+    para recibir archivos y guardarlos en el directorio correspondiente (s01, s02, s03 o s04)
 */
 int main(int argc, char *argv[]) {
 
