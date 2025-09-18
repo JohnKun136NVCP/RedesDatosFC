@@ -9,7 +9,7 @@
 #define BUFFER_SIZE 1024
 char *servers[] = {"s01", "s02", "s03", "s04"};
 
-//client.c
+//clientB.c
 
 /*
     Función para guardar fecha, hora, estado, nombre de archivo y servidor
@@ -29,6 +29,7 @@ void saveLog(const char *status, const char *filename, const char *server) {
 
 /*
     Función principal para conectar al servidor, recibir un puerto dinámico, conectarse a él y enviar o recibir datos
+    a los servidores restantes
 */
 int main(int argc, char *argv[]) {
     if (argc != 4) {
