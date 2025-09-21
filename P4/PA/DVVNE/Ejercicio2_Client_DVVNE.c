@@ -1,0 +1,143 @@
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <ctype.h>
+
+//Practica 4
+#define PORT 49200
+#define BUFFER_SIZE 1024
+
+// Funcion para eliminar espacios al inicio y final
+void trim(char *str) {
+        char *end;
+        while (isspace((unsigned char)*str)) str++; // inicio
+                end = str + strlen(str) - 1;
+        while (end > str && isspace((unsigned char)*end)) end--; // final
+        *(end + 1) = '\0';
+}
+
+//Guardamos el archivo en un buffer y lo limpiamos para  mandarlo
+void sendFile(const char *filename, char buffer[]) {
+        //Abre el archivo en solo lectura (r)
+        size_t bytesRead;
+        FILE *fp = fopen(filename, "r");
+        if (fp == NULL) {
+                perror("[-] Cannot open the file");
+                return;
+        }
+
+        while ((bytesRead = fread(buffer, 1, BUFFER_SIZE - 1, fp)) > 0){
+                buffer[bytesRead] = '\0';
+                //printf("%s", buffer);
+        }
+        trim(buffer);
+        fclose(fp);
+}
+
+int recibir(int client_sock, char buffer[], int bytes, size_t bufft){
+        FILE *parchivo;
+        bytes = recv(client_sock, buffer, bufft, 0);
+        if (bytes <= 0) {
+                printf("[-] Missed key\n");
+                close(client_sock);
+                return 1;
+        }
+        buffer[bytes] = '\0';
+        printf("%s\n", buffer);
+        parchivo = fopen("log.txt", "a");
+        if (parchivo == NULL) {
+                printf("Error al abrir el archivo.\n");
+                return 1;
+        }
+        fputs(buffer, parchivo);
+        fclose(parchivo);
+        return 0;
+}
+
+int main(int argc, char *argv[]) {
+        char *server_ip = "192.168.100.59";
+        char *newip = "192.168.0.101";
+        if (argc < 3) {
+                printf("Type: %s <archivo> <ip>\n", argv[0]);
+                return 1;
+        }
+        else if(argc > 2){
+                if(strcmp(argv[2], "s01") == 0){
+                        newip = "192.168.0.101";
+                }
+                else if(strcmp(argv[2], "s02") == 0){
+                        newip = "192.168.0.102";
+                }
+        }
+        char *archivo = argv[1];
+        int client_sock; 
+        int pnuevo = 0;
+        struct sockaddr_in serv_addr;
+
+        client_sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (client_sock == -1) {
+                 perror("[-] Error to create the socket");
+                 return 1;
+        }
+        serv_addr.sin_family = AF_INET;
+        char buffer[BUFFER_SIZE] = {0};
+        char mensaje[BUFFER_SIZE];
+        serv_addr.sin_port = htons(PORT);
+        //serv_addr.sin_addr.s_addr = inet_addr(server_ip);
+        serv_addr.sin_addr.s_addr = inet_addr(newip);
+        int respuesta = connect(client_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+        if (respuesta < 0) {
+                printf("%d", respuesta);
+                perror("[-] Error to connect");
+                close(client_sock);
+                return 1;
+        }
+
+        char clave[BUFFER_SIZE] = {0}; 
+        int bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+        if (bytes <= 0) {
+                printf("[-] Missed key\n");
+                close(client_sock);
+                return 1;
+        }
+        buffer[bytes] = '\0';
+
+        sscanf(buffer, "puerto: %d", &pnuevo);
+
+        //Cerramos la conexión y nos conectamos al nuevo puerto
+        close(client_sock);
+        client_sock = socket(AF_INET, SOCK_STREAM, 0);
+        serv_addr.sin_port = htons(pnuevo);
+        serv_addr.sin_addr.s_addr = inet_addr(newip);
+
+        respuesta = connect(client_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+        if (respuesta < 0) {
+                printf("%d", respuesta);
+                perror("[-] Error to connect");
+                close(client_sock);
+        }
+
+        recibir(client_sock, buffer, bytes, sizeof(buffer) - 1);
+
+        sendFile(archivo, clave); 
+        snprintf(mensaje, sizeof(mensaje), "%s", clave);
+        send(client_sock, mensaje, strlen(mensaje), 0);
+        recibir(client_sock, buffer, bytes, sizeof(buffer) - 1);
+
+        recibir(client_sock, buffer, bytes, sizeof(buffer) - 1);
+
+        bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+        if (bytes <= 0) {
+                printf("[-] Missed key\n");
+                close(client_sock);
+                return 1;
+        }
+        buffer[bytes] = '\0';
+        printf("Encriptado: %s\n", buffer);
+        return 0;
+}
