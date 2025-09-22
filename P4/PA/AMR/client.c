@@ -10,7 +10,7 @@
 
 #define PORT1 49200
 #define BUFFER_SIZE 7000
-//Comentario para marcar la parte A
+//Comentario para marcar la parte A el día 22 de sep
 /*
 *Función para escribir eventos en la bitácora.
 */
