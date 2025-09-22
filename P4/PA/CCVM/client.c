@@ -39,7 +39,6 @@ char* read_file(const char *filename, char *buffer, size_t buffer_size) {
 	return buffer;
 }
 
-
 void send_and_receive_message(int server_port, int client_sock, const char *filename) {
 	char file_buffer[BUFFER_SIZE * 10];
 	char recv_buffer[BUFFER_SIZE * 10];
@@ -111,12 +110,13 @@ char* get_ip(const char* alias) {
 
 int main(int argc, char *argv[]) {
 	if (argc <  3) {
-		printf("Type: %s <servidor_ip> <port> <archivo|s> \n", argv[0]);
+		printf("Type: %s <server_alias> <port> <archivo|s> \n", argv[0]);
 		return 1;
 	}
 	
 	char *server_ip = get_ip(argv[1]);
 	int port = atoi(argv[2]);
+
 	for (int i = 3; i < argc; i++) {
 		char *filename = argv[i];
 		printf("\n[*] Sending file: %s\n", filename);
