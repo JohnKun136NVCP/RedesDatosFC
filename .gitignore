@@ -1,9 +1,0 @@
-# Binarios de P3
-P3/a.out
-P3/server
-P3/serverOpt
-
-# Binarios de P4/PA (pero no la carpeta ni .c/.sh/.txt)
-P4/PA/**/client
-P4/PA/**/a.out
-P4/PA/**/*.o
