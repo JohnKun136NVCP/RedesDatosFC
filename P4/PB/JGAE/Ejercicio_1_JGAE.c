@@ -12,6 +12,7 @@
 #include <pthread.h> // Biblioteca para trabajar con hilos
 #include <time.h>    // Bibiloteca para el tiempo
 #include <errno.h>
+#include <unistd.h>
 
 #define BUFFER_SIZE 1024
 
@@ -322,6 +323,44 @@ void *programaCliente(void *arg)
     }
 }
 
+const char **obtenerAlias(const char *entrada)
+{
+    // Declaramos estático para que el arreglo no se destruya al salir de la función
+    static const char *resultado[3];
+
+    if (strcmp(entrada, "s01") == 0)
+    {
+        resultado[0] = "s02";
+        resultado[1] = "s03";
+        resultado[2] = "s04";
+    }
+    else if (strcmp(entrada, "s02") == 0)
+    {
+        resultado[0] = "s01";
+        resultado[1] = "s03";
+        resultado[2] = "s04";
+    }
+    else if (strcmp(entrada, "s03") == 0)
+    {
+        resultado[0] = "s01";
+        resultado[1] = "s02";
+        resultado[2] = "s04";
+    }
+    else if (strcmp(entrada, "s04") == 0)
+    {
+        resultado[0] = "s01";
+        resultado[1] = "s02";
+        resultado[2] = "s03";
+    }
+    else
+    {
+        // Si no coincide, devolvemos NULLs
+        resultado[0] = resultado[1] = resultado[2] = NULL;
+    }
+
+    return resultado;
+}
+
 int main(int argc, char *argv[])
 {
     if (argc != 4)
@@ -330,28 +369,37 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Obtenemos los argumentos que van a necesitar todos los hilos
-    char *server_ip = argv[1];
-    int puerto1 = atoi(argv[2]);
-    char *rutaArchivo1 = argv[3];
-    int client_sock1;
-    struct sockaddr_in serv_addr1;
+    // Obtener los 3 alias complementarios al pasado en argv[1]
+    const char *const *alias = obtenerAlias(argv[1]); // <— tipo corregido
 
-    // Creamos los 3 struct para datos del programa que pasaremos como argumento
-    struct datos_programa datos1;
-    datos1.client_sock = &client_sock1;
-    datos1.serv_addr = &serv_addr1;
-    datos1.server_ip = server_ip;
-    datos1.puerto = puerto1;
-    datos1.rutaArchivo = rutaArchivo1;
+    if (!alias[0] || !alias[1] || !alias[2])
+    {
+        printf("[-] Alias accepted: s01, s02, s03, s04\n");
+        return 1;
+    }
 
-    // Por el momento solo habrá un cliente pero dejo la estructura para agregar más en el mismo programa
-    pthread_t t1;
+    int puerto_control = atoi(argv[2]);
+    char *rutaArchivo = argv[3];
 
-    // Creamos los hilos con la función del programa y el puerto correspondiente
+    int client_sock1, client_sock2, client_sock3;
+    struct sockaddr_in serv_addr1, serv_addr2, serv_addr3;
+
+    const char *server_ip1 = alias[0];
+    const char *server_ip2 = alias[1];
+    const char *server_ip3 = alias[2];
+
+    struct datos_programa datos1 = {&client_sock1, &serv_addr1, server_ip1, puerto_control, rutaArchivo};
+    struct datos_programa datos2 = {&client_sock2, &serv_addr2, server_ip2, puerto_control, rutaArchivo};
+    struct datos_programa datos3 = {&client_sock3, &serv_addr3, server_ip3, puerto_control, rutaArchivo};
+
+    pthread_t t1, t2, t3;
     pthread_create(&t1, NULL, programaCliente, &datos1);
-    // Hacemos que el hilo main espere a que terminen los demás hilos
-    pthread_join(t1, NULL);
+    pthread_create(&t2, NULL, programaCliente, &datos2);
+    pthread_create(&t3, NULL, programaCliente, &datos3);
 
-    return 1;
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    pthread_join(t3, NULL);
+
+    return 0;
 }
