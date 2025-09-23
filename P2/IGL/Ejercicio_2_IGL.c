@@ -1,16 +1,23 @@
-/* P2/IGL/Ejercicio 2 IGL.c
-   Ejemplo de fgets(): lee una línea completa de forma segura y la muestra.
-   Nota: fgets guarda el '\n' si la línea cupo en el buffer.
-*/
 #include <stdio.h>
 
 int main(void) {
-    char linea[128];
-    printf("Escribe una línea: ");
-    if (fgets(linea, sizeof(linea), stdin)) {
-        printf("Leí: %s", linea);
+    /* Definimos un buffer de 128 bytes para almacenar la línea leída. */
+    char buffer[128];
+
+    printf("Escribe una línea (máx. 127 caracteres): ");
+
+    /* 
+     * fgets() lee hasta N-1 caracteres de stdin (incluyendo los espacios)
+     * o hasta encontrar un salto de línea '\n'. Siempre añade '\0' al final.
+     * Si la línea introducida es más larga que el tamaño del buffer,
+     * el resto de caracteres quedará pendiente en la entrada estándar.
+     */
+    if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+        printf("La línea leída es: %s", buffer);
+        /* Nota: fgets conserva el '\n' al final de la línea si cabe en el buffer. */
     } else {
-        puts("No se leyó nada (EOF o error).");
+        printf("No se pudo leer la línea.\n");
     }
+
     return 0;
 }
