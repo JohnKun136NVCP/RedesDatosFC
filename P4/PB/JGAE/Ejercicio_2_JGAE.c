@@ -16,6 +16,7 @@
 
 #define BUFFER_SIZE 1024 // Tama~no del buffer para recibir datos
 #define PUERTOSERVER 49200
+#define MAX_CONEXIONES 5 // clientes se van a conectar, todos menos el que tiene el mismo estatus
 
 void sendFile(const char *filename, int sockfd)
 {
@@ -146,13 +147,13 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
     socklen_t addr_size;
 
     // Ponemos al socket a escuchar en el puerto deseado
-    if (listen(server_sock, 1) < 0)
+    if (listen(server_sock, MAX_CONEXIONES) < 0)
     {
         perror("[-] Error on listen");
         close(server_sock);
         return -1;
     }
-    // Lo comento porque por el momento no estaremos escuchando puertos
+
     // printf("[+] Server listening port %d...\n", puertoServer);
 
     // Bloqueamos esperando a que un cliente se conecte
@@ -283,21 +284,24 @@ programaServidorLogistico(void *arg)
  */
 int manejadorCliente(int client_sock, int server_sock, int puertoServer, char *ipChar)
 {
-    // Buffer para transferencia de datos
-    char buffer[BUFFER_SIZE] = {0};
-    // Puerto que le vamos a dar al cliente par que se conecte
+    // Puerto nuevo para conexión
     int puertoClient = ++puertoServer;
 
-    // Formateamos a cadena el puerto y se lo enviamos
+    // arrancamos servidor logístico
+    pthread_t t;
+    pthread_create(&t, NULL, programaServidorLogistico, ipChar);
+    // Lo siguiente es hace independiente el hilo para que pueda correr por su cuenta en el proceso de transferencia que no sabemos cuánto tardará (tiempo random)
+    pthread_detach(t); // Este fue importante porque si no, el hilo quedaba como zombie y luego me daba problemas
+
+    // Esperamos un poco por cualquier cosa
+    sleep(1); // 1 segundo
+
+    // 3) Envía el puerto al cliente
     char mensaje[BUFFER_SIZE];
     sprintf(mensaje, "%d", puertoClient);
     send(client_sock, mensaje, strlen(mensaje), 0);
-    close(client_sock);
 
-    // Ejecutamos el programa de transferencia en un nuevo hilo
-    pthread_t t;
-    pthread_create(&t, NULL, programaServidorLogistico, ipChar);
-    pthread_join(t, NULL);
+    close(client_sock);
     return 0;
 }
 
@@ -321,15 +325,27 @@ programaServidor(void *arg)
 
     // Configuramos el socket pasando la dirección de memoria donde guardamos la configuración
     if (configurarEnlazarSocket(&server_addr, PUERTOSERVER, server_sock, ipChar) < 0)
+    {
+        close(server_sock);
         return NULL;
+    }
 
-    // Ponemos al socket a escuchar en el puerto deseado
-    if (escucharAceptarServidor(server_sock, PUERTOSERVER, &client_sock, &client_addr) < 0)
-        return NULL;
+    for (int i = 0; i < MAX_CONEXIONES; i++)
+    {
+        // Ponemos al socket a escuchar en el puerto deseado
+        if (escucharAceptarServidor(server_sock, PUERTOSERVER, &client_sock, &client_addr) < 0)
+        {
+            close(server_sock);
+            return NULL;
+        }
 
-    // Manejador del cliente
-    if (manejadorCliente(client_sock, server_sock, PUERTOSERVER, ipChar) < 0)
-        return NULL;
+        // Manejador del cliente
+        if (manejadorCliente(client_sock, server_sock, PUERTOSERVER, ipChar) < 0)
+        {
+            close(server_sock);
+            return NULL;
+        }
+    }
 
     // Si todo sale normal cerramos el socket y finalizamos el programa
     close(server_sock);
