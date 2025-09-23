@@ -10,8 +10,7 @@
 #include <stdbool.h>
 
 #define BUFFER_SIZE 7000
-#define PORT 49200 
-//Comentario para marcar la parte A el día 22 de sep
+#define PORT 49200
 /**
  * FUnción principal que obtiene el puerto a escuchar de la linea de comandos
  */
@@ -24,7 +23,8 @@ int main(int argc, char *argv[]) {
   int server_sock;
   struct sockaddr_in server_addr;
   socklen_t addr_size;
-// Se crea el socket
+
+  // Se crea el socket
   server_sock = socket(AF_INET,SOCK_STREAM,0);
   if (server_sock == -1){
     perror("[-] Error to create the socket");
@@ -41,7 +41,6 @@ int main(int argc, char *argv[]) {
   server = gethostbyname(server_ip);
   server_addr.sin_addr = *((struct in_addr *)server->h_addr);
   
-
   if (bind(server_sock, (struct sockaddr *)&server_addr,sizeof(server_addr))<0){
     perror("[-] Error binding");
     close(server_sock);
@@ -52,10 +51,10 @@ int main(int argc, char *argv[]) {
     perror("[-] Error on listening");
     close(server_sock);
     return 1;
-	}
+  }
   
   while(1){
-    printf("[+] Server listening port %d... \n",PORT);
+    printf("[+] Server %s listening port %d... \n",server_ip,PORT);
     int client_sock;
     struct sockaddr_in client_addr;
     addr_size = sizeof(client_addr);
@@ -67,10 +66,12 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
-    printf("[+] Client connected\n");
+    printf("[Server %s] Client connected\n",server_ip);
 
-
-    send(client_sock,"Servidor en espera",strlen("Servidor en espera"),0);
+    char msg1 [50];
+    int n;
+    n = sprintf(msg1,"Servidor %s en espera",server_ip);
+    send(client_sock,msg1,n,0);
 
     sleep(1);
 
@@ -86,7 +87,9 @@ int main(int argc, char *argv[]) {
     char name[512];
     sscanf(filename,"%s",name);
 
-    send(client_sock,"Nombre de archivo recibido",strlen("Nombre de archivo recibido"),0);
+    char msg2 [50];
+    n = sprintf(msg2,"Servidor %s : Nombre de archivo recibido",server_ip);
+    send(client_sock,msg2,n,0);
 
     sleep(1);
     
@@ -94,28 +97,34 @@ int main(int argc, char *argv[]) {
     //Se obtiene el archivo
     bytes = recv(client_sock,buffer,sizeof(buffer),0);
     buffer[bytes] = '\0';
-    send(client_sock,"Procesando archivo",strlen("Procesando archivo"),0);
+    char msg3 [50];
+    n = sprintf(msg3,"Servidor %s : Procesando archivo",server_ip);
+    send(client_sock,msg3,n,0);
     sleep(1);
     FILE *fpOutput;
     char *home_dir = getenv("HOME");
     char fname[512];
     snprintf(fname,sizeof(fname),"%s/%s/%s",home_dir,server_ip,name);
-    printf("nombre del archivo: %s\n",fname);
+    printf("Servidor %s : Nombre del archivo: %s\n",server_ip,fname);
     fpOutput = fopen(fname,"w");
-    
     if (fpOutput == NULL){
       perror("Error al guardar el archivo");
-      send(client_sock,"Error al guardar el archivo",strlen("Error al guardar el archivo"),0);
+      char msg4 [50];
+      n = sprintf(msg4,"Servidor %s Error al guardar el acrhivo",server_ip);
+      send(client_sock,msg4,n,0);
       continue;
     }
     fputs(buffer,fpOutput);
     fclose(fpOutput);
-    printf("Archivo guardado en %s\n",server_ip);
-    send(client_sock,"Archivo guardado",strlen("Archivo guardado"),0);
+    printf("Servidor %s : Archivo guardado en %s\n",server_ip,server_ip);
+    char msg5 [50];
+    n = sprintf(msg5,"Servidor %s: Archivo guardadp",server_ip);
+    send(client_sock,msg5,n,0);
     close(client_sock);
   }
   close(server_sock);
   return 0;
 }
 
-    
+  
+  

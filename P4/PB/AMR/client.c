@@ -10,7 +10,7 @@
 
 #define PORT1 49200
 #define BUFFER_SIZE 7000
-//Comentario para marcar la parte A el día 22 de sep
+
 /*
 *Función para escribir eventos en la bitácora.
 */
@@ -145,14 +145,22 @@ int main(int argc, char *argv[]) {
   char *port = argv[2];
   char *file_name = argv[3];
 
+  //Todos los alias
+  char *alias[] = {"s01","s02","s03","s04"};
+  
   // Se crean los sockets
   int client_sock;
   // direcciones de los servidores
   struct sockaddr_in serv_addr;
-  // Se hacen las conexiones
+  // Se hace la conexión con el servidor principal
   conection(server_ip,port,file_name,client_sock,serv_addr);
+  //Se recorren los alias y se manda el archivo a cada uno de ellos
+  for (int i = 0; i < 4; i++){
+    if (strcmp(alias[i],server_ip) == 0)
+      continue;
+    int client_sock2;
+    struct sockaddr_in serv_addr2;
+    conection(alias[i],port,file_name,client_sock2,serv_addr2); 
+  }
   return 0;
 }
-
-
-  
