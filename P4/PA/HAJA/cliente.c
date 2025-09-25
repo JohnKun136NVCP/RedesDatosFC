@@ -1,245 +1,173 @@
-/*
-  Joshua Abel Huetado Aponte
-  Práctica 4 (Parte A)
-  Los estados se imprimen en pantalla y también se guardan en:
-  $HOME/<nombre-servidor>/status.log  
-*/
+// Joshua Abel Hurtado Aponte
+// cliente.c — Práctica 4 (Parte A)
 
+#define _GNU_SOURCE
 #include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <netdb.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <unistd.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <errno.h>
 #include <time.h>
 
-#define BUFFER_SIZE 1024
-#define CTRL_PORT   49200
-#define CTRL_HOST_DEFAULT "srv"
+/* --- conectar a host:puerto por TCP  --- */
+static int conectar_tcp(const char *host, int puerto) {
+    char pstr[16];
+    snprintf(pstr, sizeof(pstr), "%d", puerto);
 
-// nos regresa $HOME o "." si es que no existe
-static const char *home_dir(void) {
-    const char *h = getenv("HOME");
-    return (h && *h) ? h : ".";
+    struct addrinfo hints, *res = NULL, *rp;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family   = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if (getaddrinfo(host, pstr, &hints, &res) != 0) return -1;
+
+    int s = -1;
+    for (rp = res; rp; rp = rp->ai_next) {
+        s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (s < 0) continue;
+        if (connect(s, rp->ai_addr, rp->ai_addrlen) == 0) break;
+        close(s); s = -1;
+    }
+    freeaddrinfo(res);
+    return s; // -1 
 }
 
-// línea de log "YYYY-mm-dd HH:MM:SS tag:puerto estado"
-// en $HOME/<tag>/status.log 
-static void log_line(const char *tag, int port, const char *estado) {
-    char dir[512], path[600];
-    snprintf(dir,  sizeof(dir), "%s/%s", home_dir(), tag);
-    (void)mkdir(dir, 0755);  // si ya existe, ignoramos esto 
-    snprintf(path, sizeof(path), "%s/status.log", dir);
-    time_t now = time(NULL);
-    struct tm tm; localtime_r(&now, &tm);
-    char ts[32]; strftime(ts, sizeof(ts), "%F %T", &tm);
-    FILE *f = fopen(path, "a");
+/* --- timestamp corto para logs  --- */
+static void hora_actual(char *out, size_t cap) {
+    time_t t = time(NULL);
+    struct tm tm;
+    localtime_r(&t, &tm);
+    strftime(out, cap, "%Y-%m-%d %H:%M:%S", &tm);
+}
+
+/* --- escribir línea status_<host>.log  --- */
+static void escribir_linea_log(const char *archivo_log, const char *linea) {
+    FILE *f = fopen(archivo_log, "a");
     if (!f) return;
-    fprintf(f, "%s %s:%d %s\n", ts, tag, port, estado);
+    char ts[32];
+    hora_actual(ts, sizeof(ts));
+    fprintf(f, "%s %s\n", ts, linea);
     fclose(f);
 }
 
-static int tcp_connect_host(const char *host_or_ip, int port) {
-    struct addrinfo hints, *res, *p;
-    char portstr[16];
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family   = AF_INET;      // IPv4
-    hints.ai_socktype = SOCK_STREAM;  // TCP
-
-    snprintf(portstr, sizeof(portstr), "%d", port);
-    int rc = getaddrinfo(host_or_ip, portstr, &hints, &res);
-    if (rc != 0) {
-        fprintf(stderr, "getaddrinfo(%s:%s): %s\n",
-                host_or_ip, portstr, gai_strerror(rc));
-        return -1;
-    }
-
-    int s = -1;
-    for (p = res; p; p = p->ai_next) {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (s < 0) continue;
-        if (connect(s, p->ai_addr, p->ai_addrlen) == 0) break;
-        close(s);
-        s = -1;
-    }
-    freeaddrinfo(res);
-
-    if (s < 0) perror("connect");
-    return s;
+/* --- log por destino  --- */
+static void log_estado_destino(const char *destino, const char *estado) {
+    char fn[256];
+    snprintf(fn, sizeof(fn), "status_%s.log", destino);
+    escribir_linea_log(fn, estado);
 }
 
-// Pregunta al broker en y devuelve el newport
-static int pedir_newport(const char *ctrl_host) {
-    int s = tcp_connect_host(ctrl_host, CTRL_PORT);
-    if (s < 0) return -1;
-
-    const char *hello = "HELLO\n";
-    if (send(s, hello, strlen(hello), 0) < 0) {
-        perror("send HELLO");
-        close(s);
-        return -1;
+/* --- leer línea "DATA_PORT=NNNN" del socket de control --- */
+static int leer_puerto_datos(int fd_control) {
+    char linea[128];
+    size_t n = 0;
+    while (n + 1 < sizeof(linea)) {
+        char c;
+        ssize_t r = recv(fd_control, &c, 1, 0);
+        if (r == 0) break;        // server cerró
+        if (r < 0) return -1;     // error
+        linea[n++] = c;
+        if (c == '\n') break;     // fin 
     }
-    char buf[128];
-    ssize_t r = recv(s, buf, sizeof(buf) - 1, 0);
-    close(s);
-    if (r <= 0) return -1;
-    buf[r] = '\0';
-    int port = -1;
-    if (sscanf(buf, "NEWPORT=%d", &port) != 1) return -1;
-    return port;
+    linea[n] = '\0';
+
+    int puerto = -1;
+    if (sscanf(linea, "DATA_PORT=%d", &puerto) == 1) return puerto;
+
+    return -1;
 }
 
-// Abre archivo y se queda solo con letras, tambien nos ayuda con acentos (hablamos español jaj)
-static char *leerSoloLetras(const char *ruta, size_t *n_out) {
+/* --- mandar todo un buffer por el socket  --- */
+static int enviar_todo(int fd, const char *buf, size_t n) {
+    size_t enviado = 0;
+    while (enviado < n) {
+        ssize_t w = send(fd, buf + enviado, n - enviado, 0);
+        if (w <= 0) {
+            if (errno == EINTR) continue;
+            return -1;
+        }
+        enviado += (size_t)w;
+    }
+    return 0;
+}
+
+int main(int argc, char **argv) {
+    if (argc != 4) {
+        fprintf(stderr, "Uso: %s <SERVIDOR> <PUERTO_CONTROL> <archivo>\n", argv[0]);
+        return 1;
+    }
+
+    const char *servidor   = argv[1];
+    int puerto_control     = atoi(argv[2]);
+    const char *ruta       = argv[3];
+
+    // leer el archivo completo 
     FILE *f = fopen(ruta, "rb");
-    if (!f) { perror("open archivo"); return NULL; }
-
+    if (!f) { perror("fopen"); return 1; }
     fseek(f, 0, SEEK_END);
     long sz = ftell(f);
     fseek(f, 0, SEEK_SET);
+    if (sz < 0) { fclose(f); fprintf(stderr, "tamaño inválido\n"); return 1; }
 
-    char *raw = malloc((size_t)sz + 1);
-    if (!raw) { fclose(f); return NULL; }
-
-    size_t n = fread(raw, 1, (size_t)sz, f);
+    char *buf = malloc((size_t)sz);
+    if (!buf) { fclose(f); fprintf(stderr, "sin memoria\n"); return 1; }
+    size_t nread = fread(buf, 1, (size_t)sz, f);
     fclose(f);
-    raw[n] = '\0';
-
-    char *clean = malloc(n + 1);
-    if (!clean) { free(raw); return NULL; }
-
-    size_t j = 0;
-    for (size_t i = 0; i < n; i++) {
-        unsigned char c = (unsigned char)raw[i];
-
-        // vocales acentuadas y ñ/Ñ 
-        if (c == 0xC3 && i + 1 < n) {
-            unsigned char d = (unsigned char)raw[i + 1];
-            if (d==0xA1||d==0x81) { c='a'; i++; }  // á/Á
-            else if (d==0xA9||d==0x89) { c='e'; i++; }
-            else if (d==0xAD||d==0x8D) { c='i'; i++; }
-            else if (d==0xB3||d==0x93) { c='o'; i++; }
-            else if (d==0xBA||d==0x9A) { c='u'; i++; }
-            else if (d==0xB1||d==0x91) { c='n'; i++; }  // ñ/Ñ
-        }
-
-        if (isalpha(c)) clean[j++] = (char)c;
-    }
-    clean[j] = '\0';
-
-    *n_out = j;
-    free(raw);
-    return clean;
-}
-
-// Conecta a puerto de datos, envía la cabecera y cuerpo, muestra respuesta.
-static int mandar(const char *conn_host, const char *logdir,
-                  int puertoServer, int portoObjetivo, int shift,
-                  const char *msg, size_t len) {
-    int s = tcp_connect_host(conn_host, puertoServer);
-    if (s < 0) return -1;
-
-    // Cabecera 
-    char header[128];
-    int hlen = snprintf(header, sizeof(header),
-                        "PORTO=%d;SHIFT=%d;LEN=%zu\n",
-                        portoObjetivo, shift, len);
-    if (hlen <= 0 || hlen >= (int)sizeof(header)) {
-        fprintf(stderr, "header invalido\n");
-        close(s);
-        return -1;
+    if (nread != (size_t)sz) {
+        free(buf);
+        fprintf(stderr, "fread parcial\n");
+        return 1;
     }
 
-    puts("RECIBIENDO");
-    log_line(logdir, puertoServer, "RECIBIENDO");
+    // CONTROL 
+    log_estado_destino(servidor, "ESPERA");
+    int cfd = conectar_tcp(servidor, puerto_control);
+    if (cfd < 0) { perror("connect control"); free(buf); return 1; }
 
-    if (send(s, header, (size_t)hlen, 0) != hlen) {
+    // cabecera con nombre y tamaño
+    const char *nombre_arch = strrchr(ruta, '/');
+    nombre_arch = nombre_arch ? nombre_arch + 1 : ruta;
+
+    char cabecera[512];
+    int hlen = snprintf(cabecera, sizeof(cabecera),
+                        "FILENAME=%s;LEN=%zu\n", nombre_arch, nread);
+    if (enviar_todo(cfd, cabecera, (size_t)hlen) != 0) {
         perror("send header");
-        close(s);
-        return -1;
-    }
-
-    // Cuerpo
-    size_t sent = 0;
-    while (sent < len) {
-        ssize_t w = send(s, msg + sent, len - sent, 0);
-        if (w <= 0) { perror("send body"); close(s); return -1; }
-        sent += (size_t)w;
-    }
-
-    // Respuesta de server
-    printf("\n--- Respuesta de %s:%d (PORTO=%d) ---\n",
-           conn_host, puertoServer, portoObjetivo);
-    char buf[BUFFER_SIZE + 1];
-    int recibimos_algo = 0;
-    for (;;) {
-        ssize_t r = recv(s, buf, BUFFER_SIZE, 0);
-        if (r <= 0) break;
-        recibimos_algo = 1;
-        buf[r] = '\0';
-        fputs(buf, stdout);
-    }
-    printf("\n");
-    close(s);
-    if (recibimos_algo) log_line(logdir, puertoServer, "TRANSMITIENDO");
-    return recibimos_algo ? 0 : -1;
-}
-
-// main
-int main(int argc, char *argv[]) {
-    if (argc != 5) {
-        printf("Uso: %s <NOMBRE_SERVIDOR|HOST/IP> <PUERTO_OBJETIVO> <SHIFT> <archivo>\n", argv[0]);
-        printf("Ejemplo:  %s s01 49200 3 texto.txt   (log en ~/s01/status.log; broker 'srv')\n", argv[0]);
+        close(cfd);
+        free(buf);
         return 1;
     }
 
-    const char *nombre_srv = argv[1];    
-    int portoObjetivo       = atoi(argv[2]);
-    int shift               = atoi(argv[3]);
-    const char *archivo     = argv[4];
-
-    const char *ctrl_host   = CTRL_HOST_DEFAULT;
-    int es_s01_s02          = (!strcmp(nombre_srv, "s01") || !strcmp(nombre_srv, "s02"));
-    const char *logdir      = nombre_srv;
-    const char *conn_host   = es_s01_s02 ? ctrl_host : nombre_srv;
-
-    // puerto de control, primero pedimos el NEWPORT
-    if (portoObjetivo == CTRL_PORT) {
-        puts("ESPERA");
-        log_line(logdir, CTRL_PORT, "ESPERA");
-
-        int np = pedir_newport(conn_host);
-        if (np <= 0) {
-            fprintf(stderr, "No se obtuvo NEWPORT\n");
-            log_line(logdir, CTRL_PORT, "ERROR_NO_PORT");
-            return 1;
-        }
-        portoObjetivo = np;
-        printf("NEWPORT=%d\n", portoObjetivo);
-    }
-
-    // Preparo el mensaje  
-    size_t nlen = 0;
-    char *msg = leerSoloLetras(archivo, &nlen);
-    if (!msg || nlen == 0) {
-        fprintf(stderr, "no se pudo leer/construir el mensaje desde '%s'\n", archivo);
-        free(msg);
+    // el server responde con el puerto de datos
+    int puerto_datos = leer_puerto_datos(cfd);
+    close(cfd);
+    if (puerto_datos <= 0) {
+        fprintf(stderr, "ERROR: servidor no devolvió DATA_PORT\n");
+        free(buf);
         return 1;
     }
 
-    // enviamos al puerto de datos asignado
-    int rc = mandar(conn_host, logdir, portoObjetivo, portoObjetivo, shift, msg, nlen);
+    //  DATOS 
+    log_estado_destino(servidor, "TRANSMITIENDO");
+    int dfd = conectar_tcp(servidor, puerto_datos);
+    if (dfd < 0) { perror("connect data"); free(buf); return 1; }
 
-    // Resultado 
-    log_line(logdir, portoObjetivo, (rc == 0) ? "OK" : "FAIL");
-    free(msg);
-    return (rc == 0) ? 0 : 1;
+    if (enviar_todo(dfd, buf, nread) != 0) {
+        perror("send data");
+        close(dfd);
+        free(buf);
+        return 1;
+    }
+    close(dfd);
+    free(buf);
+
+    log_estado_destino(servidor, "COMPLETADO");
+    printf("[CLIENTE] Enviado '%s' a %s:%d (datos en %d)\n",
+           nombre_arch, servidor, puerto_control, puerto_datos);
+    return 0;
 }
-//finn
+//finnnn
