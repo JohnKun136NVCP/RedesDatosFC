@@ -63,6 +63,10 @@ Hola soy John y mi GitHub es [este](https://github.com/JohnKun136NVCP) por si me
 
 ====== 
 
+Hola, soy Damián Vázquez y mi GitHub es [Damian020302](https://github.com/Damian020302).
+
+======
+
 
 
 
