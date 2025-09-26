@@ -9,13 +9,13 @@
 */
 long long sumaPrimosDebajo(int n) {
     int primosAprox;
-    primosAprox = (int)(n / log(n) * 1.2); ///Teorema de los numeros primos mas un margen de seguridad
+    //Teorema de los numeros primos mas un margen de seguridad
+    primosAprox = (int)(n / log(n) * 1.2); 
     int primos[primosAprox]; 
     int cantidadPrimos = 0;
     long long suma = 0; 
 
     for(int i = 2; i < n; i++) {
-        //Asumimos que i es primo
         bool esPrimo = true; 
         int raiz = (int)sqrt(i);
         //Verificamos si i es divisible por algun primo ya encontrado
