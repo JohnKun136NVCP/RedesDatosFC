@@ -9,12 +9,7 @@
 */
 long long sumaPrimosDebajo(int n) {
     int primosAprox;
-    if(n<100){
-        primosAprox = n; // Aproximacion para n pequeños
-    } else {
-        primosAprox = (int)(n / log(n) * 1.2); ///Teorema de los numeros primos mas un margen de seguridad
-    }
-
+    primosAprox = (int)(n / log(n) * 1.2); ///Teorema de los numeros primos mas un margen de seguridad
     int primos[primosAprox]; 
     int cantidadPrimos = 0;
     long long suma = 0; 
