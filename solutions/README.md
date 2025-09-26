@@ -61,8 +61,9 @@ Desde aquí puedes ir empezando.
 
 Hola soy John y mi GitHub es [este](https://github.com/JohnKun136NVCP) por si me quieres seguir o te interesan mis proyectos.
 
+Mi nombre es Maximiliano y en [mi GitHub](https://github.com/m-ow) puedes encontrar muchos proyectos open source en [mi lenguaje de programación favorito](https://lean-lang.org/).
+
 ====== 
 
-Mi nombre es Maximiliano y en [mi GitHub](https://github.com/m-ow) puedes encontrar muchos proyectos open source en [mi lenguaje de programación favorito](https://lean-lang.org/).
 
 
