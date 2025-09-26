@@ -61,6 +61,8 @@ Desde aquí puedes ir empezando.
 
 Hola soy John y mi GitHub es [este](https://github.com/JohnKun136NVCP) por si me quieres seguir o te interesan mis proyectos.
 
+Hola, me llamo Victor, solo tengo un proyecto más o menos funcional pero por si les da curiosidad mi perfil es [este](https://github.com/areummon)
+
 ====== 
 
 
