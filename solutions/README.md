@@ -61,6 +61,8 @@ Desde aquí puedes ir empezando.
 
 Hola soy John y mi GitHub es [este](https://github.com/JohnKun136NVCP) por si me quieres seguir o te interesan mis proyectos.
 
+¡Qué tal! soy Eduardo Castillo y estoy en GitHub como [PlexusDeus](https://github.com/PlexusDeus)
+
 ====== 
 
 
