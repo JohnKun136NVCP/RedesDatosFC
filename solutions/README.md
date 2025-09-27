@@ -59,8 +59,8 @@ El primer parámetro es el texto a mostrar, este tiene que estar en cochetes y l
 Desde aquí puedes ir empezando.
 
 
-Hola soy John y mi GitHub es [este](https://github.com/JohnKun136NVCP) por si me quieres seguir o te interesan mis proyectos.
-
+Hola soy Mauricio y mi GitHub es [este](https://github.com/MauComas) por si me quieres seguir.
+PD el archivo.c requiere la bandera al final -lm para el uso de la biblioteca matematica y que se compile sin problema.
 ====== 
 
 
