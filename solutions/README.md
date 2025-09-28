@@ -63,6 +63,8 @@ Hola soy John y mi GitHub es [este](https://github.com/JohnKun136NVCP) por si me
 
 ====== 
 
+Hola, soy Alejandro Jacome Delgado y mi GitHub es [kyogre235](https://github.com/kyogre235).
 
+======
 
 
