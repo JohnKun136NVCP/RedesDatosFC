@@ -67,6 +67,6 @@ Hola soy Andres, mi Github es [este](https://github.com/AndresCataneo), resolví
 
 Hola, soy Alejandro Jacome Delgado y mi GitHub es [kyogre235](https://github.com/kyogre235).
 
+Hola, soy Diego, mi Github es [este](https://github.com/Sloot25), resolvi el problema 5 en C, que trata sobre encontrar el multiplo mas pequeño de todos los numeros desde el 1 al 20.
+
 ======
-
-
