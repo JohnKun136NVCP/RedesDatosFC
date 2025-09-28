@@ -1,0 +1,144 @@
+[2025-09-22 20:29:01] CONECTANDO: destino=192.168.0.202:49200 archivo=prueba1.txt (intento 1/6)
+[2025-09-22 20:29:01] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.202:49200
+[2025-09-22 20:29:01] ESPERA: 2s antes del próximo envío
+[2025-09-22 20:29:03] CONECTANDO: destino=192.168.0.202:49200 archivo=prueba1.txt (intento 2/6)
+[2025-09-22 20:29:03] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.202:49200
+[2025-09-22 20:29:03] ESPERA: 5s antes del próximo envío
+[2025-09-22 20:29:08] CONECTANDO: destino=192.168.0.202:49200 archivo=prueba1.txt (intento 3/6)
+[2025-09-22 20:29:08] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.202:49200
+[2025-09-22 20:29:08] ESPERA: 3s antes del próximo envío
+[2025-09-22 20:29:11] CONECTANDO: destino=192.168.0.201:49200 archivo=prueba1.txt (intento 4/6)
+[2025-09-22 20:29:11] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.201:49200
+[2025-09-22 20:29:11] ESPERA: 6s antes del próximo envío
+[2025-09-22 20:29:17] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 5/6)
+[2025-09-22 20:29:17] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 20:29:17] ESPERA: 6s antes del próximo envío
+[2025-09-22 20:29:23] CONECTANDO: destino=192.168.0.201:49200 archivo=prueba1.txt (intento 6/6)
+[2025-09-22 20:29:23] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.201:49200
+[2025-09-22 20:29:23] ESPERA: 4s antes del próximo envío
+[2025-09-22 20:44:31] CONECTANDO: destino=192.168.0.202:49200 archivo=log_cliente.txt (intento 1/6)
+[2025-09-22 20:44:34] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.202:49200
+[2025-09-22 20:44:34] ESPERA: 2s antes del próximo envío
+[2025-09-22 20:44:36] CONECTANDO: destino=192.168.0.202:49200 archivo=log_cliente.txt (intento 2/6)
+[2025-09-22 20:44:39] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.202:49200
+[2025-09-22 20:44:39] ESPERA: 5s antes del próximo envío
+[2025-09-22 20:44:44] CONECTANDO: destino=192.168.0.201:49200 archivo=log_cliente.txt (intento 3/6)
+[2025-09-22 20:44:47] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.201:49200
+[2025-09-22 20:44:47] ESPERA: 5s antes del próximo envío
+[2025-09-22 20:44:52] CONECTANDO: destino=192.168.0.200:49200 archivo=log_cliente.txt (intento 4/6)
+[2025-09-22 20:44:55] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.200:49200
+[2025-09-22 20:44:55] ESPERA: 3s antes del próximo envío
+[2025-09-22 20:44:59] CONECTANDO: destino=192.168.0.201:49200 archivo=log_cliente.txt (intento 5/6)
+[2025-09-22 20:45:02] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.201:49200
+[2025-09-22 20:45:02] ESPERA: 8s antes del próximo envío
+[2025-09-22 20:45:10] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 6/6)
+[2025-09-22 20:45:13] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 20:45:13] ESPERA: 5s antes del próximo envío
+[2025-09-22 20:52:53] CONECTANDO: destino=192.168.0.202:49200 archivo=prueba1.txt (intento 1/6)
+[2025-09-22 20:52:56] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.202:49200
+[2025-09-22 20:52:56] ESPERA: 7s antes del próximo envío
+[2025-09-22 20:53:03] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 2/6)
+[2025-09-22 20:53:03] OK: ENVIADO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 20:53:03] ESPERA: 5s antes del próximo envío
+[2025-09-22 20:53:08] CONECTANDO: destino=192.168.0.201:49200 archivo=log_cliente.txt (intento 3/6)
+[2025-09-22 20:53:11] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.201:49200
+[2025-09-22 20:53:11] ESPERA: 6s antes del próximo envío
+[2025-09-22 20:53:17] CONECTANDO: destino=192.168.0.202:49200 archivo=prueba1.txt (intento 4/6)
+[2025-09-22 20:53:20] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.202:49200
+[2025-09-22 20:53:20] ESPERA: 7s antes del próximo envío
+[2025-09-22 20:53:27] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 5/6)
+[2025-09-22 20:53:27] OK: ENVIADO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 20:53:27] ESPERA: 5s antes del próximo envío
+[2025-09-22 20:53:32] CONECTANDO: destino=192.168.0.201:49200 archivo=log_cliente.txt (intento 6/6)
+[2025-09-22 20:53:35] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.201:49200
+[2025-09-22 20:53:35] ESPERA: 5s antes del próximo envío
+[2025-09-22 20:54:30] CONECTANDO: destino=192.168.0.200:49200 archivo=log_cliente.txt (intento 1/6)
+[2025-09-22 20:54:30] OK: ENVIADO archivo=log_cliente.txt a 192.168.0.200:49200
+[2025-09-22 20:54:30] ESPERA: 7s antes del próximo envío
+[2025-09-22 20:54:37] CONECTANDO: destino=192.168.0.202:49200 archivo=prueba1.txt (intento 2/6)
+[2025-09-22 20:54:40] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.202:49200
+[2025-09-22 20:54:40] ESPERA: 5s antes del próximo envío
+[2025-09-22 20:54:45] CONECTANDO: destino=192.168.0.200:49200 archivo=log_cliente.txt (intento 3/6)
+[2025-09-22 20:54:45] OK: ENVIADO archivo=log_cliente.txt a 192.168.0.200:49200
+[2025-09-22 20:54:45] ESPERA: 2s antes del próximo envío
+[2025-09-22 20:54:47] CONECTANDO: destino=192.168.0.200:49200 archivo=log_cliente.txt (intento 4/6)
+[2025-09-22 20:54:47] OK: ENVIADO archivo=log_cliente.txt a 192.168.0.200:49200
+[2025-09-22 20:54:47] ESPERA: 4s antes del próximo envío
+[2025-09-22 20:54:51] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 5/6)
+[2025-09-22 20:54:51] OK: ENVIADO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 20:54:51] ESPERA: 2s antes del próximo envío
+[2025-09-22 20:54:53] CONECTANDO: destino=192.168.0.200:49200 archivo=log_cliente.txt (intento 6/6)
+[2025-09-22 20:54:53] OK: ENVIADO archivo=log_cliente.txt a 192.168.0.200:49200
+[2025-09-22 20:54:53] ESPERA: 5s antes del próximo envío
+[2025-09-22 21:27:58] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 1/6)
+[2025-09-22 21:28:12] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 21:28:12] ESPERA: 6s antes del próximo envío
+[2025-09-22 21:28:18] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 2/6)
+[2025-09-22 21:28:21] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 21:28:21] ESPERA: 4s antes del próximo envío
+[2025-09-22 21:28:25] CONECTANDO: destino=192.168.0.200:49200 archivo=log_cliente.txt (intento 3/6)
+[2025-09-22 21:28:28] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.200:49200
+[2025-09-22 21:28:28] ESPERA: 3s antes del próximo envío
+[2025-09-22 21:28:31] CONECTANDO: destino=192.168.0.201:49200 archivo=log_cliente.txt (intento 4/6)
+[2025-09-22 21:28:34] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.201:49200
+[2025-09-22 21:28:34] ESPERA: 2s antes del próximo envío
+[2025-09-22 21:28:36] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 5/6)
+[2025-09-22 21:28:39] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 21:28:39] ESPERA: 4s antes del próximo envío
+[2025-09-22 21:28:43] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 6/6)
+[2025-09-22 21:28:46] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 21:28:46] ESPERA: 2s antes del próximo envío
+[2025-09-22 21:30:17] CONECTANDO: destino=192.168.0.201:49200 archivo=prueba1.txt (intento 1/6)
+[2025-09-22 21:30:20] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.201:49200
+[2025-09-22 21:30:20] ESPERA: 5s antes del próximo envío
+[2025-09-22 21:30:26] CONECTANDO: destino=192.168.0.202:49200 archivo=prueba1.txt (intento 2/6)
+[2025-09-22 21:30:29] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.202:49200
+[2025-09-22 21:30:29] ESPERA: 6s antes del próximo envío
+[2025-09-22 21:30:35] CONECTANDO: destino=192.168.0.202:49200 archivo=log_cliente.txt (intento 3/6)
+[2025-09-22 21:30:38] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.202:49200
+[2025-09-22 21:30:38] ESPERA: 2s antes del próximo envío
+[2025-09-22 21:30:40] CONECTANDO: destino=192.168.0.201:49200 archivo=log_cliente.txt (intento 4/6)
+[2025-09-22 21:30:43] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.201:49200
+[2025-09-22 21:30:43] ESPERA: 2s antes del próximo envío
+[2025-09-22 21:30:45] CONECTANDO: destino=192.168.0.202:49200 archivo=log_cliente.txt (intento 5/6)
+[2025-09-22 21:30:48] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.202:49200
+[2025-09-22 21:30:48] ESPERA: 7s antes del próximo envío
+[2025-09-22 21:30:55] CONECTANDO: destino=192.168.0.200:49200 archivo=log_cliente.txt (intento 6/6)
+[2025-09-22 21:30:58] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.200:49200
+[2025-09-22 21:30:58] ESPERA: 4s antes del próximo envío
+[2025-09-22 21:34:55] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 1/6)
+[2025-09-22 21:34:58] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 21:34:58] ESPERA: 7s antes del próximo envío
+[2025-09-22 21:35:05] CONECTANDO: destino=192.168.0.202:49200 archivo=log_cliente.txt (intento 2/6)
+[2025-09-22 21:35:08] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.202:49200
+[2025-09-22 21:35:08] ESPERA: 2s antes del próximo envío
+[2025-09-22 21:35:10] CONECTANDO: destino=192.168.0.200:49200 archivo=log_cliente.txt (intento 3/6)
+[2025-09-22 21:35:13] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.200:49200
+[2025-09-22 21:35:13] ESPERA: 2s antes del próximo envío
+[2025-09-22 21:35:15] CONECTANDO: destino=192.168.0.202:49200 archivo=log_cliente.txt (intento 4/6)
+[2025-09-22 21:35:18] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.202:49200
+[2025-09-22 21:35:18] ESPERA: 4s antes del próximo envío
+[2025-09-22 21:35:22] CONECTANDO: destino=192.168.0.201:49200 archivo=log_cliente.txt (intento 5/6)
+[2025-09-22 21:35:26] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.201:49200
+[2025-09-22 21:35:26] ESPERA: 2s antes del próximo envío
+[2025-09-22 21:35:28] CONECTANDO: destino=192.168.0.200:49200 archivo=prueba1.txt (intento 6/6)
+[2025-09-22 21:35:31] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.200:49200
+[2025-09-22 21:35:31] ESPERA: 5s antes del próximo envío
+[2025-09-22 21:38:23] CONECTANDO: destino=192.168.0.201:49200 archivo=log_cliente.txt (intento 1/6)
+[2025-09-22 21:38:26] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.201:49200
+[2025-09-22 21:38:26] ESPERA: 2s antes del próximo envío
+[2025-09-22 21:38:28] CONECTANDO: destino=192.168.0.201:49200 archivo=log_cliente.txt (intento 2/6)
+[2025-09-22 21:38:31] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.201:49200
+[2025-09-22 21:38:31] ESPERA: 2s antes del próximo envío
+[2025-09-22 21:38:33] CONECTANDO: destino=192.168.0.202:49200 archivo=log_cliente.txt (intento 3/6)
+[2025-09-22 21:38:36] ERROR: FALLO_EN_ENVIO archivo=log_cliente.txt a 192.168.0.202:49200
+[2025-09-22 21:38:36] ESPERA: 3s antes del próximo envío
+[2025-09-22 21:38:39] CONECTANDO: destino=192.168.0.201:49200 archivo=prueba1.txt (intento 4/6)
+[2025-09-22 21:38:42] ERROR: FALLO_EN_ENVIO archivo=prueba1.txt a 192.168.0.201:49200
+[2025-09-22 21:38:42] ESPERA: 6s antes del próximo envío
+[2025-09-22 21:38:48] CONECTANDO: destino=192.168.0.200:49200 archivo=log_cliente.txt (intento 5/6)
+[2025-09-22 21:38:48] OK: ENVIADO archivo=log_cliente.txt a 192.168.0.200:49200
+[2025-09-22 21:38:48] ESPERA: 5s antes del próximo envío
+[2025-09-22 21:38:53] CONECTANDO: destino=192.168.0.200:49200 archivo=log_cliente.txt (intento 6/6)
+[2025-09-22 21:38:53] OK: ENVIADO archivo=log_cliente.txt a 192.168.0.200:49200
+[2025-09-22 21:38:53] ESPERA: 4s antes del próximo envío
