@@ -86,6 +86,9 @@ PD el archivo.c requiere la bandera al final -lm para el uso de la biblioteca ma
 
 Hola soy Aldo, mi perfil de GitHub es [este](https://github.com/aaldoaangeles).
 
-======
+Mi nombre es Maximiliano y en [mi GitHub](https://github.com/m-ow) puedes encontrar muchos proyectos open source en [mi lenguaje de programación favorito](https://lean-lang.org/).
+
+====== 
+
 
 
