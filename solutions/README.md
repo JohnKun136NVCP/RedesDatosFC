@@ -84,6 +84,8 @@ Hola, me llamo Victor, solo tengo un proyecto más o menos funcional pero por si
 Hola soy Mauricio y mi GitHub es [este](https://github.com/MauComas) por si me quieres seguir.
 PD el archivo.c requiere la bandera al final -lm para el uso de la biblioteca matematica y que se compile sin problema.
 
+Hola, soy Sofia y mi GitHub es [este](https://github.com/Sofia279), resolví el problema 6 en C /ᐠ. .ᐟ\ฅ
+
 ======
 
 
