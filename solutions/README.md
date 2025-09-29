@@ -1,3 +1,4 @@
+
 # Repaso de prácticas con Git y GitHub. 📖
 
 Esperando que la mayoría del curso supiese lo básico de Git. Esto abarca desde:
@@ -73,6 +74,7 @@ Hola soy Francisco y mi GitHub es [este](https://github.com/FranciscoMendiola).
 
 Hola soy Geovani y mi GitHub es [este](https://github.com/GeovaniMtz) por si me quieres seguir :).
 
-Hola soy Geovani y mi GitHub es [este](https://github.com/GeovaniMtz) por si me quieres seguir :).
+Hola soy Ixchel y mi GitHub es este por si me quieres seguir ☺: [MishIxc14](https://github.com/MishIxc14)
 
 ======
+
