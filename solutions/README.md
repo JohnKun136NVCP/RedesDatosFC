@@ -90,6 +90,7 @@ Mi nombre es Maximiliano y en [mi GitHub](https://github.com/m-ow) puedes encont
 
 Hola, soy Sofia y mi GitHub es [este](https://github.com/Sofia279), resolví el problema 6 en C 
 
+Holi, soy Lau y me pueden seguir en Github en este [enlace](https://github.com/laudima)
 
 ======
 
