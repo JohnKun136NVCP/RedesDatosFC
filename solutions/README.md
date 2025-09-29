@@ -60,7 +60,6 @@ El primer parámetro es el texto a mostrar, este tiene que estar en cochetes y l
 Desde aquí puedes ir empezando.
 
 
-
 Hola soy John y mi GitHub es [este](https://github.com/JohnKun136NVCP) por si me quieres seguir o te interesan mis proyectos.
 
 ¡Qué tal! Soy Eduardo Castillo y estoy en GitHub como [PlexusDeus](https://github.com/PlexusDeus)
@@ -90,7 +89,8 @@ Mi nombre es Maximiliano y en [mi GitHub](https://github.com/m-ow) puedes encont
 
 Hola, soy Sofia y mi GitHub es [este](https://github.com/Sofia279), resolví el problema 6 en C 
 
+Hola soy Ricardo Iván y este es mi [Github](https://github.com/rickivan)
 
-======
+====== 
 
 
