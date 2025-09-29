@@ -9,7 +9,7 @@
 int main() {
 
     // abrimos el archivo keylog.txt para leerlo
-    FILE *f = fopen("keylog.txt", "r");
+    FILE *f = fopen("ASAJ_EULER_79_keylog.txt", "r");
     // si por alguna razón no se puede, avisamos y salimos.
     if (!f) {
         perror("No se pudo abrir el archivo");
