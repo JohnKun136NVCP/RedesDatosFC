@@ -88,7 +88,9 @@ Hola soy Aldo, mi perfil de GitHub es [este](https://github.com/aaldoaangeles).
 
 Mi nombre es Maximiliano y en [mi GitHub](https://github.com/m-ow) puedes encontrar muchos proyectos open source en [mi lenguaje de programación favorito](https://lean-lang.org/).
 
-====== 
+Hola, soy Sofia y mi GitHub es [este](https://github.com/Sofia279), resolví el problema 6 en C 
 
+
+======
 
 
