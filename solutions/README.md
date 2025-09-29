@@ -93,6 +93,8 @@ Hola soy Ricardo Iván y este es mi [Github](https://github.com/rickivan)
 
 Hola soy Ramón y mi Github es [este](https://github.com/Htska)
 
+Hola soy Nancy Elena d3el Valle Vera y mi Github es [AnyoneOne1](https://github.com/AnyoneOne1).
+
 ====== 
 
 
