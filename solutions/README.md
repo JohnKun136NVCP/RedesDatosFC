@@ -60,6 +60,7 @@ El primer parámetro es el texto a mostrar, este tiene que estar en cochetes y l
 Desde aquí puedes ir empezando.
 
 
+
 Hola soy John y mi GitHub es [este](https://github.com/JohnKun136NVCP) por si me quieres seguir o te interesan mis proyectos.
 
 ¡Qué tal! Soy Eduardo Castillo y estoy en GitHub como [PlexusDeus](https://github.com/PlexusDeus)
@@ -79,6 +80,9 @@ Hola soy Ixchel y mi GitHub es este por si me quieres seguir ☺: [MishIxc14](ht
 Hola soy Juvenal y mi Github es [este](https://github.com/JuvsProgrammer).
 
 Hola, me llamo Victor, solo tengo un proyecto más o menos funcional pero por si les da curiosidad mi perfil es [este](https://github.com/areummon)
+
+Hola soy Mauricio y mi GitHub es [este](https://github.com/MauComas) por si me quieres seguir.
+PD el archivo.c requiere la bandera al final -lm para el uso de la biblioteca matematica y que se compile sin problema.
 
 ======
 
