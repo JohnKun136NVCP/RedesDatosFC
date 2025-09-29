@@ -125,7 +125,6 @@ void *roundRobin(void *serverInfo){
         n = sprintf(msg5,"Servidor %s: Archivo guardadp",server->ip);
         send(client_sock,msg5,n,0);
         close(client_sock);
-        pthread_mutex_lock(&turnos);
       }
     }
     turno = turno == 0 ? 1 : turno == 1 ? 2 : turno == 2 ? 3 : 0;
