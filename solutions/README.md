@@ -80,6 +80,7 @@ Hola soy Juvenal y mi Github es [este](https://github.com/JuvsProgrammer).
 
 Hola, me llamo Victor, solo tengo un proyecto más o menos funcional pero por si les da curiosidad mi perfil es [este](https://github.com/areummon)
 
+Hola soy Aldo, mi perfil de GitHub es [este](https://github.com/aaldoaangeles).
 ======
 
 
