@@ -16,8 +16,6 @@
 #define server_port 49200 // Puerto base 
 #define QUANTUM_TIME 15
 
-//gcc server.c -o server -lpthread
-
 /*
     Estructura para memoria compartida. Con esto nos aseguramos que solo un servidor
     esté recibiendo archivos a la vez y que cada servidor espere su turno. Además notifica
@@ -134,32 +132,40 @@ connection_node_t* getNextConnection(int server_index) {
 }
 
 /*
-    Función que procesa la conexión donde recibe el archivo y lo guarda si es el servidor correcto
+    Función que procesa la conexión donde recibe los archivo y los guarda si es el servidor correcto
 */
 void processConnection(int dynamic_client, int dynamic_sock, const char* target_server) {
     char buffer[BUFFER_SIZE] = {0};
     char file_content[BUFFER_SIZE] = {0};
     char filename[256];
 
-    int bytes = recv(dynamic_client, buffer, sizeof(buffer) - 1, 0);
-    if (bytes > 0) {
-        buffer[bytes] = '\0';
-        
-        char alias[32];
-        if (sscanf(buffer, "%31[^|]|%255[^|]|%[^\n]", alias, filename, file_content) == 3) {
-            if (strcmp(alias, target_server) == 0) {
-                saveFile(alias, filename, file_content);
-                char *msg = "File received successfully";
-                send(dynamic_client, msg, strlen(msg), 0);
-                printf("[SERVER %s] File %s received\n", alias, filename);
+    while(1){
+        int bytes = recv(dynamic_client, buffer, sizeof(buffer) - 1, 0);
+        if (bytes <= 0) {
+            break;
+        }else{
+            buffer[bytes] = '\0';
+            
+            char alias[32];
+            if (sscanf(buffer, "%31[^|]|%255[^|]|%[^\n]", alias, filename, file_content) == 3) {
+                if (strcmp(alias, target_server) == 0) {
+                    saveFile(alias, filename, file_content);
+                    char *msg = "File received successfully";
+                    send(dynamic_client, msg, strlen(msg), 0);
+                    printf("[SERVER %s] File %s received\n", alias, filename);
+                } else {
+                    char *msg = "REJECTED - Wrong server";
+                    send(dynamic_client, msg, strlen(msg), 0);
+                    printf("[SERVER %s] Rejected file for %s\n", target_server, alias);
+                }
             } else {
-                char *msg = "REJECTED - Wrong server";
+                char *msg = "REJECTED";
                 send(dynamic_client, msg, strlen(msg), 0);
-                printf("[SERVER %s] Rejected file for %s\n", target_server, alias);
             }
-        } else {
-            char *msg = "REJECTED";
-            send(dynamic_client, msg, strlen(msg), 0);
+
+            memset(buffer, 0, sizeof(buffer));
+            memset(file_content, 0, sizeof(file_content));
+            memset(filename, 0, sizeof(filename));
         }
     }
     
@@ -244,6 +250,7 @@ void* serverThread(void* arg) {
         
         pthread_cond_broadcast(&shared_mem->turn_cond);
         pthread_mutex_unlock(&shared_mem->mutex);
+        usleep(1000); 
     }
     
     return NULL;
@@ -303,6 +310,7 @@ void* quantumAdmin(void* arg) {
         }
         
         pthread_mutex_unlock(&shared_mem->mutex);
+        usleep(1000); 
     }
     return NULL;
 }
@@ -451,6 +459,7 @@ int main(int argc, char *argv[]) {
         pthread_t handler_thread;
         pthread_create(&handler_thread, NULL, connectionHand, sockets);
         pthread_detach(handler_thread);
+        usleep(1000); 
     }
     
     close(port_s);
