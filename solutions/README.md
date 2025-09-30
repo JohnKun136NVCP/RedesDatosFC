@@ -103,6 +103,8 @@ Hola soy Ramón y mi Github es [este](https://github.com/Htska)
 
 Hola soy Nancy Elena d3el Valle Vera y mi Github es [AnyoneOne1](https://github.com/AnyoneOne1).
 
+Hola soy El Luis y este es mi git :sunglasses:  [GitHub](https://github.com/LuisGarGomez).
+
 Buenas, mi nombre es Aldo Jurado, no tengo nada muy interesante, pero igual les dejo mi [perfil](https://github.com/aldojurado) de Github por si quieren colaborar en algo.
 
 
