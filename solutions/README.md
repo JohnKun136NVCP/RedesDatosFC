@@ -115,4 +115,6 @@ Hola soy Erick, mi github es [Erick-Isra](https://github.com/Erick-Isra), hice e
 
 Hola, soy Eduardo Biali García Gómez y mi GitHub es [Eduardobgg](https://github.com/Eduardobgg).
  
+Hola, soy Fer Osorio y pícale [aqui](https://github.com/FernandaOsorioMorales) si quieres seguirme en Github.
+
 ======  
