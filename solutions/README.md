@@ -112,5 +112,7 @@ Hola, soy Angel Moises Gonzalez Corrales y mi GitHub es [este](https://github.co
 Hola! soy Anshar Barrón, mi GitHub es [@AnsharShampoo](https://github.com/AnsharShampoo) 
 
 Hola soy Erick, mi github es [Erick-Isra](https://github.com/Erick-Isra), hice el ejercicio 50.
+
+Hola, soy Eduardo Biali García Gómez y mi GitHub es [Eduardobgg](https://github.com/Eduardobgg).
  
 ======  
