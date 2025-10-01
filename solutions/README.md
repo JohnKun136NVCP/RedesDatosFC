@@ -105,6 +105,26 @@ Hola soy Nancy Elena d3el Valle Vera y mi Github es [AnyoneOne1](https://github.
 
 Buenas, mi nombre es Aldo Jurado, no tengo nada muy interesante, pero igual les dejo mi [perfil](https://github.com/aldojurado) de Github por si quieren colaborar en algo.
 
+Hola soy Alejandro, mi github es [este](https://github.com/Alejandro-Estrada-1) 
+
+Hola, soy Angel Moises Gonzalez Corrales y mi GitHub es [este](https://github.com/MoisesAGC).
+
+Hola! soy Anshar Barrón, mi GitHub es [@AnsharShampoo](https://github.com/AnsharShampoo) 
+
+Hola soy Erick, mi github es [Erick-Isra](https://github.com/Erick-Isra), hice el ejercicio 50.
+
+Hola, soy Eduardo Biali García Gómez y mi GitHub es [Eduardobgg](https://github.com/Eduardobgg).
+ 
+Hola, soy Fer Osorio y pícale [aqui](https://github.com/FernandaOsorioMorales) si quieres seguirme en Github.
+
+Hola, soy Joshua y mi Github es este: (https://github.com/JoshuaJAHA)
+
+Holi, soy Lau y me pueden seguir en Github en este [enlace](https://github.com/laudima)
+
+Hola soy Mauricio Flores y mi Github es [este](https://github.com/maufloresm)
+
+Hola soy Miguel y este es mi [Github](https://github.com/mi-brito)
+
 Qué onda, soy Axel Rodríguez. Github: [@Ahexo](https://github.com/ahexo), Mi web: [ahexo.xyz](https://www.ahexo.xyz).
 
-======
+======  
