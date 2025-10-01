@@ -129,4 +129,6 @@ Hola soy Mildred y mi GitHub es [este](https://github.com/MildredMtz).
 
 Holaaa, soy Raul Emiliano, mi git esta algo abandonado aunque pienso revivirlo un dia de estos. Pueden [seguirme](https://github.com/RaulLabonne) si gustan c:
 
+Hola soy Shuc y mi GitHub es [este](https://github.com/shucshin).
+
 ======  
