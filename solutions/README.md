@@ -122,4 +122,7 @@ Hola, soy Joshua y mi Github es este: (https://github.com/JoshuaJAHA)
 Holi, soy Lau y me pueden seguir en Github en este [enlace](https://github.com/laudima)
 
 Hola soy Mauricio Flores y mi Github es [este](https://github.com/maufloresm)
+
+Hola soy Miguel y este es mi [Github](https://github.com/mi-brito)
+
 ======  
