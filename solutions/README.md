@@ -131,4 +131,20 @@ Holaaa, soy Raul Emiliano, mi git esta algo abandonado aunque pienso revivirlo u
 
 Hola soy Shuc y mi GitHub es [este](https://github.com/shucshin).
 
+Hola, soy Joshua y mi Github es este: (https://github.com/JoshuaJAHA)
+
+Holi, soy Lau y me pueden seguir en Github en este [enlace](https://github.com/laudima)
+
+Hola soy Mauricio Flores y mi Github es [este](https://github.com/maufloresm)
+
+Hola soy Miguel y este es mi [Github](https://github.com/mi-brito)
+
+Hola soy Mildred y mi GitHub es [este](https://github.com/MildredMtz).
+
+Holaaa, soy Raul Emiliano, mi git esta algo abandonado aunque pienso revivirlo un dia de estos. Pueden [seguirme](https://github.com/RaulLabonne) si gustan c:
+
+Hola soy Shuc y mi GitHub es [este](https://github.com/shucshin).
+
+Hola, soy Victor Mendiola :D, y mi GitHub es [EllieWilliams5](https://github.com/EllieWilliams5).
+
 ======  
