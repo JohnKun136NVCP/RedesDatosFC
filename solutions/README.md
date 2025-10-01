@@ -147,4 +147,6 @@ Hola soy Shuc y mi GitHub es [este](https://github.com/shucshin).
 
 Hola, soy Victor Mendiola :D, y mi GitHub es [EllieWilliams5](https://github.com/EllieWilliams5).
 
+Qué onda, soy Axel Rodríguez. Github: [@Ahexo](https://github.com/ahexo), Mi web: [ahexo.xyz](https://www.ahexo.xyz).
+
 ======  
