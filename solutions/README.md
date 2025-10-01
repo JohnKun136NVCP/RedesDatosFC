@@ -105,6 +105,14 @@ Hola soy Nancy Elena d3el Valle Vera y mi Github es [AnyoneOne1](https://github.
 
 Buenas, mi nombre es Aldo Jurado, no tengo nada muy interesante, pero igual les dejo mi [perfil](https://github.com/aldojurado) de Github por si quieren colaborar en algo.
 
+Hola soy Ricardo Iván y este es mi [Github](https://github.com/rickivan)
+
+Hola soy Ramón y mi Github es [este](https://github.com/Htska)
+
+Hola soy Nancy Elena d3el Valle Vera y mi Github es [AnyoneOne1](https://github.com/AnyoneOne1).
+
+Buenas, mi nombre es Aldo Jurado, no tengo nada muy interesante, pero igual les dejo mi [perfil](https://github.com/aldojurado) de Github por si quieren colaborar en algo.
+
 Hola soy Alejandro, mi github es [este](https://github.com/Alejandro-Estrada-1) 
 
 Hola, soy Angel Moises Gonzalez Corrales y mi GitHub es [este](https://github.com/MoisesAGC).
@@ -118,5 +126,7 @@ Hola, soy Eduardo Biali García Gómez y mi GitHub es [Eduardobgg](https://githu
 Hola, soy Fer Osorio y pícale [aqui](https://github.com/FernandaOsorioMorales) si quieres seguirme en Github.
 
 Hola, soy Joshua y mi Github es este: (https://github.com/JoshuaJAHA)
+
+Holi, soy Lau y me pueden seguir en Github en este [enlace](https://github.com/laudima)
 
 ======  
