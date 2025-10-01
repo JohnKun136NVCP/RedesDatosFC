@@ -149,4 +149,6 @@ Hola, soy Victor Mendiola :D, y mi GitHub es [EllieWilliams5](https://github.com
 
 Qué onda, soy Axel Rodríguez. Github: [@Ahexo](https://github.com/ahexo), Mi web: [ahexo.xyz](https://www.ahexo.xyz).
 
+¡Hola! Soy Sandra, en mi [perfil](https://github.com/PlexusDeus) podrás encontrar dos proyectos hechos con amor :')
+
 ======  
