@@ -107,4 +107,51 @@ Buenas, mi nombre es Aldo Jurado, no tengo nada muy interesante, pero igual les 
 
 Hola, soy Alfredo Barke y mi GitHub es [alfredobarke](https://github.com/alfredobarke)
 
-======
+Hola soy Alejandro, mi github es [este](https://github.com/Alejandro-Estrada-1) 
+
+Hola, soy Angel Moises Gonzalez Corrales y mi GitHub es [este](https://github.com/MoisesAGC).
+
+Hola! soy Anshar Barrón, mi GitHub es [@AnsharShampoo](https://github.com/AnsharShampoo) 
+
+Hola soy Erick, mi github es [Erick-Isra](https://github.com/Erick-Isra), hice el ejercicio 50.
+
+Hola, soy Eduardo Biali García Gómez y mi GitHub es [Eduardobgg](https://github.com/Eduardobgg).
+ 
+Hola, soy Fer Osorio y pícale [aqui](https://github.com/FernandaOsorioMorales) si quieres seguirme en Github.
+
+Hola, soy Joshua y mi Github es este: (https://github.com/JoshuaJAHA)
+
+Holi, soy Lau y me pueden seguir en Github en este [enlace](https://github.com/laudima)
+
+Hola soy Mauricio Flores y mi Github es [este](https://github.com/maufloresm)
+
+Hola soy Miguel y este es mi [Github](https://github.com/mi-brito)
+
+Hola soy Mildred y mi GitHub es [este](https://github.com/MildredMtz).
+
+Holaaa, soy Raul Emiliano, mi git esta algo abandonado aunque pienso revivirlo un dia de estos. Pueden [seguirme](https://github.com/RaulLabonne) si gustan c:
+
+Hola soy Shuc y mi GitHub es [este](https://github.com/shucshin).
+
+Hola, soy Joshua y mi Github es este: (https://github.com/JoshuaJAHA)
+
+Holi, soy Lau y me pueden seguir en Github en este [enlace](https://github.com/laudima)
+
+Hola soy Mauricio Flores y mi Github es [este](https://github.com/maufloresm)
+
+Hola soy Miguel y este es mi [Github](https://github.com/mi-brito)
+
+Hola soy Mildred y mi GitHub es [este](https://github.com/MildredMtz).
+
+Holaaa, soy Raul Emiliano, mi git esta algo abandonado aunque pienso revivirlo un dia de estos. Pueden [seguirme](https://github.com/RaulLabonne) si gustan c:
+
+Hola soy Shuc y mi GitHub es [este](https://github.com/shucshin).
+
+Hola, soy Victor Mendiola :D, y mi GitHub es [EllieWilliams5](https://github.com/EllieWilliams5).
+
+Qué onda, soy Axel Rodríguez. Github: [@Ahexo](https://github.com/ahexo), Mi web: [ahexo.xyz](https://www.ahexo.xyz).
+
+¡Hola! Soy Sandra, en mi [perfil](https://github.com/PlexusDeus) podrás encontrar dos proyectos hechos con amor :')
+
+======  
+
