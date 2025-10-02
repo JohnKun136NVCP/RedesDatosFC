@@ -151,5 +151,7 @@ Qué onda, soy Axel Rodríguez. Github: [@Ahexo](https://github.com/ahexo), Mi w
 
 ¡Hola! Soy Sandra, en mi [perfil](https://github.com/PlexusDeus) podrás encontrar dos proyectos hechos con amor :')
 
+Hola, soy Daiki, y este es mi perfil de [GitHub](https://github.com/DaikiBenedek) y resolví el ejercicio 8 en java.
+
 ======  
 
