@@ -105,8 +105,6 @@ Hola soy Nancy Elena d3el Valle Vera y mi Github es [AnyoneOne1](https://github.
 
 Buenas, mi nombre es Aldo Jurado, no tengo nada muy interesante, pero igual les dejo mi [perfil](https://github.com/aldojurado) de Github por si quieren colaborar en algo.
 
-Hola, soy Alfredo Barke y mi GitHub es [alfredobarke](https://github.com/alfredobarke)
-
 Hola soy Alejandro, mi github es [este](https://github.com/Alejandro-Estrada-1) 
 
 Hola, soy Angel Moises Gonzalez Corrales y mi GitHub es [este](https://github.com/MoisesAGC).
@@ -156,6 +154,8 @@ Qué onda, soy Axel Rodríguez. Github: [@Ahexo](https://github.com/ahexo), Mi w
 Hola, soy Daiki, y este es mi perfil de [GitHub](https://github.com/DaikiBenedek) y resolví el ejercicio 8 en java.
 
 Hola soy El Luis y este es mi git :sunglasses:  [GitHub](https://github.com/LuisGarGomez).
+
+Hola, soy Alfredo Barke y mi GitHub es [alfredobarke](https://github.com/alfredobarke)
 
 ======  
 
