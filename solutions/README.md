@@ -155,7 +155,9 @@ Hola, soy Daiki, y este es mi perfil de [GitHub](https://github.com/DaikiBenedek
 
 Hola soy El Luis y este es mi git :sunglasses:  [GitHub](https://github.com/LuisGarGomez).
 
-Hola, soy Alfredo Barke y mi GitHub es [alfredobarke](https://github.com/alfredobarke)
+Hola, soy Alfredo Barke y mi GitHub es [alfredobarke](https://github.com/alfredobarke).
+
+Hola soy Yamil Salazar, mi [Github](https://github.com/YamilSalazar).
 
 ======  
 
