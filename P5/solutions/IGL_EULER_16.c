@@ -5,7 +5,6 @@
   Levi Iparrea Granados — IGL
   Project Euler 16: Suma de dígitos de 2^1000
 
-  Nota mía: uso un "bigint casero" en base 10 (un arreglo de dígitos).
   Cada iteración multiplica el número completo por 2 y administra el acarreo.
 */
 
