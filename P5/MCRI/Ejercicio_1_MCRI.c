@@ -141,13 +141,34 @@ void *scheduler(void *arg)
     return NULL;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    if(argc != 2)
+    {
+        printf("USO: <ALIAS>\n");
+        return 1; 
+    }
+    char *alias = argv[1];  
+    struct addrinfo hints, *res; 
+    char port_str[16]; 
+    snprintf(port_str, sizeof(port_str), "%d", MAIN_PORT);
+
+    memset(&hints, 0, sizeof(hints)); 
+    hints.ai_family = AF_INET; 
+    hints.ai_socktype = SOCK_STREAM; 
+
+    // Obtener direccion IP del alias
+    if (getaddrinfo(alias, port_str, &hints, &res) != 0)
+    {
+        fprintf(stderr, "[-] Error: alias '%s' no encontrado en /etc/hosts\n", alias);
+        exit(1);
+    }
+
     int server_sock, client_sock;
     struct sockaddr_in server_addr, client_addr;
     socklen_t addr_size = sizeof(client_addr);
 
-    server_sock = socket(AF_INET, SOCK_STREAM, 0);
+    server_sock = socket(res -> ai_family, res -> ai_socktype, res -> ai_protocol);
     if (server_sock == -1)
     {
         perror("[-] Error al crear socket");
@@ -157,11 +178,7 @@ int main()
     int opt = 1;
     setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(MAIN_PORT);
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-
-    if (bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    if (bind(server_sock, res->ai_addr, res->ai_addrlen) < 0)
     {
         perror("[-] Error al bind");
         close(server_sock);
@@ -191,7 +208,7 @@ int main()
 
         Client c;
         c.socket = client_sock;
-        c.addr = server_addr;
+        c.addr = client_addr;
         c.fp = NULL;
         c.sending = false;
 
@@ -202,6 +219,8 @@ int main()
         printf("[+] Nuevo cliente conectado en socket %d\n", client_sock);
     }
 
+    freeaddrinfo(res);
+    pthread_cancel(sched_thread);
     close(server_sock);
     return 0;
 }
