@@ -320,6 +320,7 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "[-] Error: HOME environment variable not found.\n");
 		return 1;
 	}
+
 	snprintf(dir_path, sizeof(dir_path), "%s/%s", home_directory, alias);
 	printf("[!] The home directory of the server is: %s\n", dir_path); 
 
