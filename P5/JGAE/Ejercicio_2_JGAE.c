@@ -92,12 +92,6 @@ int configurarEnlazarSocket(struct sockaddr_in *server_addr, int puertoServer, i
     int one = 1;
     setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 
-    /* Si se descomenta esto también acepta ip numéricas, así conectado solo acepta alias
-    // Intentamos enlazar con ip numérica
-    if (bind(server_sock, (struct sockaddr *)server_addr, sizeof(*server_addr)) == 0)
-        return 0; // éxito
-    */
-
     // Resolvemos alias
     // Convertir puerto a cadena
     char portstr[16];
@@ -259,6 +253,8 @@ programaServidorLogistico(void *arg)
     int server_sock, client_sock;
     // Estructura definición de la dirección de los sockets
     struct sockaddr_in server_addr, client_addr;
+    // Tamaño de la dirección
+    socklen_t addr_size = sizeof(client_addr);
 
     // Crear el socket IPv4 TCP:
     if ((server_sock = crearSocketIPv4TCP()) < 0)
@@ -278,15 +274,34 @@ programaServidorLogistico(void *arg)
      * - Con las conexiones pendientes va a ir aceptando cada una y luego reinicial el ciclo
      */
 
-    // Ponemos al socket a escuchar en el puerto deseado
-    if (escucharAceptarServidor(server_sock, puertoNuevo, &client_sock, &client_addr) < 0)
+    // Ponemos al socket en modo escuchar
+    if (listen(server_sock, MAX_CONEXIONES) < 0)
+    {
+        perror("[-] Error on listen");
+        close(server_sock);
         return NULL;
+    }
 
-    // Manejador del cliente
-    if (manejadorClienteTrans(client_sock, server_sock, puertoNuevo, ipChar) < 0)
-        return NULL;
+    while (1)
+    {
+        // Bloqueamos esperando a que un cliente se conecte
+
+        client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &addr_size);
+        if (client_sock < 0)
+        {
+            perror("[-] Error on accept");
+            close(server_sock);
+            return NULL;
+        }
+
+        // Manejador de transferencia
+        // Manejador del cliente
+        if (manejadorClienteTrans(client_sock, server_sock, puertoNuevo, ipChar) < 0)
+            return NULL;
+    }
 
     // Cerramos socket servidor y finalizamos el programa
+    // Este caso ya no se va a dar
     close(server_sock);
     return NULL;
 }
@@ -299,25 +314,12 @@ int manejadorCliente(int client_sock, int server_sock, int puertoServer, char *i
     // Puerto nuevo para conexión
     int puertoClient = ++puertoServer;
 
-    /**
-     * Cambio:
-     * - En lugar de estar creando un hilo para cada cliente, ahora reutlizaŕe el hilo para todas las recepciones
-     */
-
-    // arrancamos servidor logístico
-    pthread_t t;
-    pthread_create(&t, NULL, programaServidorLogistico, ipChar);
-    // Lo siguiente es hace independiente el hilo para que pueda correr por su cuenta en el proceso de transferencia que no sabemos cuánto tardará (tiempo random)
-    pthread_detach(t); // Este fue importante porque si no, el hilo quedaba como zombie y luego me daba problemas
-
-    // Esperamos un poco por cualquier cosa
-    sleep(1); // 1 segundo
-
-    // 3) Envía el puerto al cliente
+    // Enviamos el puerto al que el cliente debe conectarse
     char mensaje[BUFFER_SIZE];
     sprintf(mensaje, "%d", puertoClient);
     send(client_sock, mensaje, strlen(mensaje), 0);
 
+    // Cerramos la conexión con el cliente
     close(client_sock);
     return 0;
 }
@@ -347,12 +349,13 @@ programaServidor(void *arg)
         return NULL;
     }
 
-    /**
-     * Cambios
-     *   -Crear por acá el hilo con el programa del servidor logístico que tendrá puerto +1
-     * - Considerar si convienen conexiones infinitas o dejarlo fijo
-     */
-    for (int i = 0; i < MAX_CONEXIONES; i++)
+    // Creamos servidor transferencia y lo hacemos independiente
+    pthread_t t;
+    pthread_create(&t, NULL, programaServidorLogistico, ipChar);
+    pthread_detach(t);
+
+    // Ciclo infinito de aceptar conexiones y asignarles puerto para transferencia
+    while (1)
     {
         // Ponemos al socket a escuchar en el puerto deseado
         if (escucharAceptarServidor(server_sock, PUERTOSERVER, &client_sock, &client_addr) < 0)
@@ -369,6 +372,7 @@ programaServidor(void *arg)
         }
     }
 
+    // A este tampoco va a llegar nunca por el ciclo
     // Si todo sale normal cerramos el socket y finalizamos el programa
     close(server_sock);
     return NULL;
