@@ -57,12 +57,6 @@ int conectarServidor(struct sockaddr_in *serv_addr, int client_sock,
     serv_addr->sin_port = htons(puerto);
     serv_addr->sin_addr.s_addr = inet_addr(server_ip);
 
-    /* Parte comentada para conexión por ip numérica
-    // conexión por ip XXX.XXX.XXX.XXX
-    if (connect(client_sock, (struct sockaddr *)serv_addr, sizeof(*serv_addr)) == 0)
-        return 0; // éxito
-    */
-
     // Convertir puerto a cadena
     char portstr[16];
     snprintf(portstr, sizeof(portstr), "%d", puerto);
@@ -233,31 +227,77 @@ int manejadorServidor(int *client_sock, struct sockaddr_in *serv_addr, const cha
         perror("[-] Error to create the connection socket provided by server");
         return -1;
     }
+
     if (conectarServidor(serv_addr, *client_sock, server_ip, puertoServer) != 1)
     {
-        // Si la conexión es exitosa recibimos el estatus del servidor y lo guardamos en un archivo
-        // Esperamos la respuesta del servidor con recv que recibe datos de un socket ya conectado
-        int bytes = recv(*client_sock, buffer, sizeof(buffer) - 1, 0);
-        if (bytes > 0)
+
+        char buf[BUFFER_SIZE];
+        char acc[BUFFER_SIZE * 2] = {0}; // acumulador simple
+        size_t acc_len = 0;
+
+        while (1)
         {
-            buffer[bytes] = '\0';
+            int n = recv(*client_sock, buf, sizeof(buf) - 1, 0);
+            if (n <= 0)
+            {
+                printf("[-] Server connection timeout\n");
+                return -1;
+            }
+            buf[n] = '\0';
 
-            // Lo que nos mande el servidor lo guardamos en un archivo
-            guardarLog(buffer);
+            // Log (opcional)
+            guardarLog(buf);
 
-            // Hacemos la espera aleatoria 1 a 3 segundosr
-            srand(time(NULL) ^ getpid());
-            int delay = 1 + rand() % 3;
-            sleep(delay);
+            // Acumular (capado simple)
+            size_t to_copy = n;
+            if (acc_len + to_copy >= sizeof(acc) - 1)
+            {
+                // si se llena, resetea (estrategia simple para esta práctica)
+                acc_len = 0;
+                acc[0] = '\0';
+            }
+            memcpy(acc + acc_len, buf, to_copy);
+            acc_len += to_copy;
+            acc[acc_len] = '\0';
 
-            // Enviamos el archivo con lo de la práctica pasada
-            return autorizarEnviarArchivo(*client_sock, puertoServer, rutaArchivo);
+            // ¿Ya vimos "SERVER RECEIVING"?
+            if (strstr(acc, "SERVER RECEIVING") != NULL)
+                break;
+
+            // Si solo llega WAITING u otra cosa, seguimos esperando
         }
-        else
+
+        // (Opcional) pequeña espera aleatoria para simular jitter
+        srand(time(NULL) ^ getpid());
+        int delay = 1 + rand() % 3;
+        sleep(delay);
+
+        // 4) Enviar el NOMBRE del archivo (ruta) y luego el archivo
+        //    Como ya no esperamos "REQUEST ACCEPTED", vamos directo.
         {
-            printf("[-] Server connection timeout\n");
-            return -1;
+            char mensaje[BUFFER_SIZE];
+            snprintf(mensaje, sizeof(mensaje), "%s", rutaArchivo);
+            if (send(*client_sock, mensaje, strlen(mensaje), 0) == -1)
+            {
+                perror("[-] Error sending filename");
+                return -1;
+            }
         }
+
+        // enviar el archivo
+        sendFile(rutaArchivo, *client_sock);
+
+        // avisar que ya no vamos a recibir nada más
+        shutdown(*client_sock, SHUT_WR);
+
+        int m = recv(*client_sock, buf, sizeof(buf) - 1, 0);
+        if (m > 0)
+        {
+            buf[m] = '\0';
+            guardarLog(buf);
+        }
+
+        return 0;
     }
     else
     {

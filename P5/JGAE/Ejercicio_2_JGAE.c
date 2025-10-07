@@ -38,37 +38,42 @@ static char *aliasIP[MAX_ALIAS] = {0};
 
 static inline int next_id(int id) { return (id + 1) % MAX_ALIAS; }
 
-void *coordinadorRR(void *arg)
+void *logisticaRoundRobin(void *arg)
 {
     (void)arg;
     while (1)
     {
         pthread_mutex_lock(&EXCLUSION);
 
-        // si alguien recibe, el coordinador "pausa"
+        // mientras haya un hilo recibiendo el hilo coordinador queda en espera
         while (hiloOcupado != -1)
         {
             pthread_cond_wait(&CONDICION, &EXCLUSION);
         }
 
-        // nadie recibe: si el del turno no tiene pendientes, salta inmediato
-        int guard = 0;
-        while (numPendientes[turno] == 0 && guard < MAX_ALIAS)
+        /*
+        Si nadie está recibiendo, revisa si al que le toca tiene recepciones pendientes, si no tiene entonces pasa al siguiente
+        y los despierta a todos con el broadcast para que al que le toque empiece a recibir
+        La variable revisados es para que solo revise tantos como alias haya, que en realidad es 4
+        */
+        int revisados = 0;
+        while (numPendientes[turno] == 0 && revisados < MAX_ALIAS)
         {
             turno = next_id(turno);
-            guard++;
+            revisados++;
             pthread_cond_broadcast(&CONDICION);
         }
 
         pthread_mutex_unlock(&EXCLUSION);
 
-        // espera el quantum; si alguien empieza a recibir, el condvar lo reactivará
+        // espera el quantum antes de volver a revisar  si alguien está recibiendo
         sleep(QUANTUM);
 
+        // Si después del tiempo que se le dio no está recibiendo entonces cambia al siguiente turno
         pthread_mutex_lock(&EXCLUSION);
         if (hiloOcupado == -1)
-        {                           // nadie empezó en este quantum
-            turno = next_id(turno); // pasa turno
+        {
+            turno = next_id(turno);
             pthread_cond_broadcast(&CONDICION);
         }
         pthread_mutex_unlock(&EXCLUSION);
@@ -223,6 +228,8 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
  */
 int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer, char *ipChar, int id)
 {
+    // Mandamos que el server está esperando turno
+    send(client_sock, "SERVER WAITING\n", strlen("SERVER WAITING\n"), 0);
 
     // Esperamos nuestro turno por medio de intentar obtener un candado
     pthread_mutex_lock(&EXCLUSION);
@@ -236,16 +243,15 @@ int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer, ch
     hiloOcupado = id;
     pthread_mutex_unlock(&EXCLUSION);
 
+    // mandamos que está recibiendo
+    send(client_sock, "SERVER RECEIVING\n", strlen("SERVER RECEIVING\n"), 0);
+
     // para guardar el directorio home del usuario
     const char *homedir;
     if ((homedir = getenv("HOME")) == NULL)
     {
         homedir = ".";
     }
-
-    // Le enviiamos nuestro estado al cliente
-    char *mensaje = "SERVER WAITING";
-    send(client_sock, mensaje, strlen(mensaje), 0);
 
     // Buffer para transferencia de datos
     char buffer[BUFFER_SIZE] = {0};
@@ -477,10 +483,10 @@ int main(int argc, char *argv[])
     for (int i = 0; i < MAX_ALIAS; i++)
         aliasIP[i] = argv[i + 1];
 
-    // coordinador RR
-    pthread_t tcoord;
-    pthread_create(&tcoord, NULL, coordinadorRR, NULL);
-    pthread_detach(tcoord);
+    // Hilo logístico se va a encargar de coordinar los turnos
+    pthread_t logi;
+    pthread_create(&logi, NULL, logisticaRoundRobin, NULL);
+    pthread_detach(logi);
 
     // hilos de servidores (pasamos id como (void*))
     pthread_t t[MAX_ALIAS];
