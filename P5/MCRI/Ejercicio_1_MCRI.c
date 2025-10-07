@@ -8,16 +8,20 @@
 #include <pthread.h>
 #include <netdb.h>
 #include <time.h>
+#include <signal.h>
 
 #define MAIN_PORT 49200
 #define BUFFER_SIZE 1024
+#define QUANTUM 10
 
 char **alias_list;
 int num_alias;
-
 int current_turn = 0;
+
 pthread_mutex_t turn_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t turn_cond = PTHREAD_COND_INITIALIZER;
+
+volatile sig_atomic_t stop = 0;
 
 void get_datetime(char *buffer, size_t size) {
     time_t now = time(NULL);
@@ -92,10 +96,6 @@ void *server_thread(void *arg) {
     printf("[+] Servidor '%s' listo en puerto %d\n", alias, MAIN_PORT);
 
     while (1) {
-        struct sockaddr_in cli_addr;
-        socklen_t cli_len = sizeof(cli_addr);
-        int *client_sock = malloc(sizeof(int));
-
         // Esperar turno Round Robin
         pthread_mutex_lock(&turn_mutex);
         while (my_id != current_turn) {
@@ -104,30 +104,57 @@ void *server_thread(void *arg) {
         }
         pthread_mutex_unlock(&turn_mutex);
 
-        printf("[*] Servidor '%s' está recibiendo cliente...\n", alias);
+        printf("[*] Turno del servidor %s iniciado...\n", alias);
 
-        // Aceptar conexión
-        *client_sock = accept(server_sock, (struct sockaddr *)&cli_addr, &cli_len);
-        if (*client_sock < 0) {
-            perror("[-] Error en accept");
-            free(client_sock);
-            continue;
+        // Iniciar temporizador
+        signal(SIGALRM, SIG_IGN);
+        stop = 0; 
+        alarm(QUANTUM);
+
+        struct sockaddr_in cli_addr;
+        socklen_t cli_len = sizeof(cli_addr);
+        int *client_sock = malloc(sizeof(int));
+
+        // Esperar hasta que llegue un cliente o se acabe el quantum
+        fd_set read_fds;
+        struct timeval timeout;
+        timeout.tv_sec = QUANTUM;
+        timeout.tv_usec = 0;
+        FD_ZERO(&read_fds);
+        FD_SET(server_sock, &read_fds);
+
+        int activity = select(server_sock + 1, &read_fds, NULL, NULL, &timeout);
+        if(activity < 0) {
+            perror("[-] Error en select");
+        } else if (activity == 0) {
+            printf("[*] Quantum de %d segundos terminado para servidor '%s'\n", QUANTUM, alias);
+        } else 
+        {
+            *client_sock = accept(server_sock, (struct sockaddr *)&cli_addr, &cli_len);
+            if(*client_sock >= 0)
+            {
+                printf("[+] Servidor '%s' aceptó conexión de %s:%d\n", alias,
+                       inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
+                pthread_t tid;
+                pthread_create(&tid, NULL, handle_client, client_sock);
+                pthread_detach(tid);
+            }
+            if (*client_sock < 0) {
+                perror("[-] Error en accept");
+                free(client_sock);
+            }
         }
-
-        pthread_t tid;
-        pthread_create(&tid, NULL, handle_client, client_sock);
-        pthread_detach(tid);
-
-        // Avisar a los demás
+        alarm(0); 
+        // Pasar turno al siguiente servidor
         pthread_mutex_lock(&turn_mutex);
         current_turn = (current_turn + 1) % num_alias;
+        printf("[*] Servidor '%s' cediendo turno a %s\n", alias, alias_list[current_turn]);
         pthread_cond_broadcast(&turn_cond);
         pthread_mutex_unlock(&turn_mutex);
 
         printf("[+] Servidor '%s' terminó su turno. Siguiente: %s\n",
                alias, alias_list[current_turn]);
     }
-
     close(server_sock);
     pthread_exit(NULL);
 }
