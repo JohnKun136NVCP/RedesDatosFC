@@ -14,10 +14,67 @@
 #include <pthread.h>
 #include <netdb.h>
 
+// Ids
+#include <stdint.h>
+
 #define BUFFER_SIZE 1024 // Tama~no del buffer para recibir datos
 #define PUERTOSERVER 49200
 #define MAX_CONEXIONES 5 // clientes se van a conectar, todos menos el que tiene el mismo estatus
 #define QUANTUM 4        // 4 segundos va a durar el quantum
+#define MAX_ALIAS 4      // Número máximo de servidores con su alias que van a estar escuchando
+
+// Candado de exclusión mutua y variable de condición
+static pthread_mutex_t EXCLUSION = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t CONDICION = PTHREAD_COND_INITIALIZER;
+
+// Variables globales para saber a quién le toca y si hay un hilo ocupado
+static volatile int turno = 0;
+static volatile int hiloOcupado = -1;
+static int numPendientes[MAX_ALIAS] = {0}; // clientes pendientes del servidor
+
+// Arreglos para guardar los alias y sus IPs
+static char *aliasIP[MAX_ALIAS] = {0};
+// static char *aliasIP[MAX_ALIAS] = {"s01", "s02", "s03", "s04"};
+
+static inline int next_id(int id) { return (id + 1) % MAX_ALIAS; }
+
+void *coordinadorRR(void *arg)
+{
+    (void)arg;
+    while (1)
+    {
+        pthread_mutex_lock(&EXCLUSION);
+
+        // si alguien recibe, el coordinador "pausa"
+        while (hiloOcupado != -1)
+        {
+            pthread_cond_wait(&CONDICION, &EXCLUSION);
+        }
+
+        // nadie recibe: si el del turno no tiene pendientes, salta inmediato
+        int guard = 0;
+        while (numPendientes[turno] == 0 && guard < MAX_ALIAS)
+        {
+            turno = next_id(turno);
+            guard++;
+            pthread_cond_broadcast(&CONDICION);
+        }
+
+        pthread_mutex_unlock(&EXCLUSION);
+
+        // espera el quantum; si alguien empieza a recibir, el condvar lo reactivará
+        sleep(QUANTUM);
+
+        pthread_mutex_lock(&EXCLUSION);
+        if (hiloOcupado == -1)
+        {                           // nadie empezó en este quantum
+            turno = next_id(turno); // pasa turno
+            pthread_cond_broadcast(&CONDICION);
+        }
+        pthread_mutex_unlock(&EXCLUSION);
+    }
+    return NULL;
+}
 
 void sendFile(const char *filename, int sockfd)
 {
@@ -53,7 +110,7 @@ void imprimirArchivo(const char *filename)
     }
     char buffer[BUFFER_SIZE];
     size_t bytes;
-    while ((bytes = fread(buffer, 1, sizeof(buffer), fp)) > 0)
+    while ((bytes = fread(buffer, 1, sizeof(buffer) - 1, fp)) > 0)
     {
         // hacemos que el buffer se detenga hasta donde se llena por cada línea
         buffer[bytes] = '\0';
@@ -145,7 +202,6 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
     if (listen(server_sock, MAX_CONEXIONES) < 0)
     {
         perror("[-] Error on listen");
-        close(server_sock);
         return -1;
     }
 
@@ -157,7 +213,6 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
     if (*client_sock < 0)
     {
         perror("[-] Error on accept");
-        close(server_sock);
         return -1;
     }
     return 0;
@@ -166,8 +221,21 @@ int escucharAceptarServidor(int server_sock, int puertoServer, int *client_sock,
 /**
  * Función que maneja la conexión para transferencia de información.
  */
-int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer, char *ipChar)
+int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer, char *ipChar, int id)
 {
+
+    // Esperamos nuestro turno por medio de intentar obtener un candado
+    pthread_mutex_lock(&EXCLUSION);
+    // Dormimos al hilo si no nos toca o si hay otro hilo recibiendo
+    while (!(hiloOcupado == -1 && turno == id))
+    {
+        pthread_cond_wait(&CONDICION, &EXCLUSION);
+    }
+    // Si logra salir es porque ya es su turno y nadie está recibiendo
+    // avisa que está recibiendo y suelta el candado porque ya marcó que va a recibir
+    hiloOcupado = id;
+    pthread_mutex_unlock(&EXCLUSION);
+
     // para guardar el directorio home del usuario
     const char *homedir;
     if ((homedir = getenv("HOME")) == NULL)
@@ -194,7 +262,6 @@ int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer, ch
     {
         printf("[-] Missed file name\n");
         close(client_sock);
-        close(server_sock);
         return -1;
     }
 
@@ -239,6 +306,20 @@ int manejadorClienteTrans(int client_sock, int server_sock, int puertoServer, ch
     // Dejamos de cerrar el socket del servidor
     close(client_sock);
 
+    // ya que acabamos de recibir, tomamos el candado para actualizar que ya no estamos recibiendo
+    pthread_mutex_lock(&EXCLUSION);
+    // Se baja uno de los pendientes a recibir
+    if (numPendientes[id] > 0)
+        numPendientes[id]--;
+    // reiniciamos qué hilo está ocupado para decir que ya nadie
+    hiloOcupado = -1;
+    // actualizamos el turno
+    turno = next_id(id);
+    // se debe usar broadcast porque signal despierta a un solo hilo y no está fácil controlar cuál será
+    // Broadcast despierta a todos los hilos que están en espera del candado
+    pthread_cond_broadcast(&CONDICION);
+    pthread_mutex_unlock(&EXCLUSION);
+
     return 0;
 }
 
@@ -246,7 +327,8 @@ void *
 programaServidorLogistico(void *arg)
 {
     // Casteamos los argumentos del tipo genérico al array de argumentos
-    char *ipChar = (char *)arg;
+    int id = (int)(intptr_t)arg;
+    char *ipChar = aliasIP[id];
     int puertoNuevo = PUERTOSERVER + 1;
 
     // enteros representación de los sockets
@@ -290,14 +372,14 @@ programaServidorLogistico(void *arg)
         if (client_sock < 0)
         {
             perror("[-] Error on accept");
-            close(server_sock);
-            return NULL;
+            // en lugar de cerrarlo pasamos a la siguiente
+            continue;
         }
 
         // Manejador de transferencia
-        // Manejador del cliente
-        if (manejadorClienteTrans(client_sock, server_sock, puertoNuevo, ipChar) < 0)
-            return NULL;
+        // Nuevamente en lugar de cerrar el socket del servidor, pasamos a la siguiente conexión
+        if (manejadorClienteTrans(client_sock, server_sock, puertoNuevo, ipChar, id) < 0)
+            continue;
     }
 
     // Cerramos socket servidor y finalizamos el programa
@@ -309,10 +391,16 @@ programaServidorLogistico(void *arg)
 /**
  * Función que maneja la conexión inicial con el cliente y la asignación de puerto para transferencia
  */
-int manejadorCliente(int client_sock, int server_sock, int puertoServer, char *ipChar)
+int manejadorCliente(int client_sock, int server_sock, int puertoServer, char *ipChar, int id)
 {
     // Puerto nuevo para conexión
     int puertoClient = ++puertoServer;
+
+    // candado de exclusión
+    pthread_mutex_lock(&EXCLUSION);
+    numPendientes[id]++; // Hay un cliente pendiente de transferir
+    pthread_cond_broadcast(&CONDICION);
+    pthread_mutex_unlock(&EXCLUSION);
 
     // Enviamos el puerto al que el cliente debe conectarse
     char mensaje[BUFFER_SIZE];
@@ -330,8 +418,8 @@ int manejadorCliente(int client_sock, int server_sock, int puertoServer, char *i
 void *
 programaServidor(void *arg)
 {
-    // Casteamos los argumentos del tipo genérico al array de argumentos
-    char *ipChar = (char *)arg;
+    int id = (int)(intptr_t)arg;
+    char *ipChar = aliasIP[id];
 
     // enteros representación de los sockets
     int server_sock, client_sock;
@@ -351,7 +439,7 @@ programaServidor(void *arg)
 
     // Creamos servidor transferencia y lo hacemos independiente
     pthread_t t;
-    pthread_create(&t, NULL, programaServidorLogistico, ipChar);
+    pthread_create(&t, NULL, programaServidorLogistico, (void *)(intptr_t)id);
     pthread_detach(t);
 
     // Ciclo infinito de aceptar conexiones y asignarles puerto para transferencia
@@ -365,7 +453,7 @@ programaServidor(void *arg)
         }
 
         // Manejador del cliente
-        if (manejadorCliente(client_sock, server_sock, PUERTOSERVER, ipChar) < 0)
+        if (manejadorCliente(client_sock, server_sock, PUERTOSERVER, ipChar, id) < 0)
         {
             close(server_sock);
             return NULL;
@@ -380,27 +468,27 @@ programaServidor(void *arg)
 
 int main(int argc, char *argv[])
 {
-
     if (argc != 5)
     {
-        printf("Type: %s <IP_alias_1> <IP_alias_2> <IP_alias_3> <IP_alias_4> \n", argv[0]);
+        printf("Type: %s <IP_alias_1> <IP_alias_2> <IP_alias_3> <IP_alias_4>\n", argv[0]);
         return 1;
     }
 
-    // Creamos dos hilos, uno para aceptar conexiones y otro para transferencia de archivos
-    pthread_t t1, t2, t3, t4;
+    for (int i = 0; i < MAX_ALIAS; i++)
+        aliasIP[i] = argv[i + 1];
 
-    // Hilos para los 4 alias
-    pthread_create(&t1, NULL, programaServidor, argv[1]);
-    pthread_create(&t2, NULL, programaServidor, argv[2]);
-    pthread_create(&t3, NULL, programaServidor, argv[3]);
-    pthread_create(&t4, NULL, programaServidor, argv[4]);
+    // coordinador RR
+    pthread_t tcoord;
+    pthread_create(&tcoord, NULL, coordinadorRR, NULL);
+    pthread_detach(tcoord);
 
-    // Hacemos que el hilo main espere a que terminen los demás hilos
-    pthread_join(t1, NULL);
-    pthread_join(t2, NULL);
-    pthread_join(t3, NULL);
-    pthread_join(t4, NULL);
-
+    // hilos de servidores (pasamos id como (void*))
+    pthread_t t[MAX_ALIAS];
+    for (int i = 0; i < MAX_ALIAS; i++)
+    {
+        pthread_create(&t[i], NULL, programaServidor, (void *)(intptr_t)i);
+    }
+    for (int i = 0; i < MAX_ALIAS; i++)
+        pthread_join(t[i], NULL);
     return 0;
 }
