@@ -133,13 +133,12 @@ void *server_thread(void *arg) {
             *client_sock = accept(server_sock, (struct sockaddr *)&cli_addr, &cli_len);
             if(*client_sock >= 0)
             {
-                printf("[+] Servidor '%s' aceptó conexión de %s:%d\n", alias,
-                       inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
+                printf("[+] Servidor '%s' aceptó conexión de %s\n", alias, alias_list[current_turn]);
                 pthread_t tid;
                 pthread_create(&tid, NULL, handle_client, client_sock);
                 pthread_detach(tid);
             }
-            if (*client_sock < 0) {
+            else {
                 perror("[-] Error en accept");
                 free(client_sock);
             }
