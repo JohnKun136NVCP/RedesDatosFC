@@ -1,211 +1,235 @@
-/*
-  Joshua Abel Huetado Aponte
-  server.c — Práctica 4 (Parte A)
-*/
+// Joshua Abel Hurtado Aponte
+// server.c — Práctica 4 (Parte A)
+// Guarda archivos en ~/s01, ~/s02
 
+#define _GNU_SOURCE
 #include <arpa/inet.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
-#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <errno.h>
-#include <stdbool.h>
 
-#define BACKLOG  16
-#define LINE_MAX 256
+#define BACKLOG   16
+#define LINEA_MAX 512
 
-// Cifrado César básico (letras A-Z / a-z)
-static void encryptCaesar(char *s, int shift) {
-    shift %= 26;
-    if (shift < 0) shift += 26;
-    for (int i = 0; s[i]; i++) {
-        unsigned char c = (unsigned char)s[i];
-        if (isupper(c))      s[i] = (char)(((c - 'A' + shift) % 26) + 'A');
-        else if (islower(c)) s[i] = (char)(((c - 'a' + shift) % 26) + 'a');
-    }
-}
+#define IP_S01 "192.168.64.101"
+#define IP_S02 "192.168.64.102"
+#define IP_S03 "192.168.64.103"
+#define IP_S04 "192.168.64.104"
 
-// Lee una línea (terminada en '\n') del socket
-static ssize_t read_line(int fd, char *buf, size_t cap) {
+/* --- lee una línea del socket --- */
+static ssize_t leer_linea(int fd, char *buf, size_t cap) {
     size_t n = 0;
     while (n + 1 < cap) {
         char c;
         ssize_t r = recv(fd, &c, 1, 0);
-        if (r == 0) break;          
-        if (r < 0)  return -1;      
+        if (r == 0) break;                        // se cerró del otro lado
+        if (r < 0) { if (errno == EINTR) continue; return -1; }
         buf[n++] = c;
-        if (c == '\n') break;
+        if (c == '\n') break;                     // fin 
     }
     buf[n] = '\0';
     return (ssize_t)n;
 }
 
-// Lee exactamente n bytes del socket
-static int read_n(int fd, char *buf, size_t n) {
-    size_t got = 0;
-    while (got < n) {
-        ssize_t r = recv(fd, buf + got, n - got, 0);
-        if (r == 0) return -1;                 
-        if (r < 0) { if (errno == EINTR) continue; return -1; }
-        got += (size_t)r;
-    }
-    return 0;
-}
-
-// Envía todo el buffer 
-static int send_all(int fd, const char *buf, size_t n) {
-    size_t sent = 0;
-    while (sent < n) {
-        ssize_t w = send(fd, buf + sent, n - sent, 0);
-        if (w <= 0) { if (errno == EINTR) continue; return -1; }
-        sent += (size_t)w;
-    }
-    return 0;
-}
-
-static int mklistener(int port) {
-    int s = socket(AF_INET, SOCK_STREAM, 0);
-    if (s < 0) { perror("socket"); return -1; }
-    int yes = 1;
-    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
-    struct sockaddr_in a;
-    memset(&a, 0, sizeof(a));
-    a.sin_family      = AF_INET;
-    a.sin_port        = htons((uint16_t)port);
-    a.sin_addr.s_addr = INADDR_ANY;
-
-    if (bind(s, (struct sockaddr*)&a, sizeof(a)) < 0) {
-        perror("bind"); close(s); return -1;
-    }
-    if (listen(s, BACKLOG) < 0) {
-        perror("listen"); close(s); return -1;
-    }
-    return s;
-}
-
-
-static void handle_data(int cfd, int listen_port) {
-    char line[LINE_MAX];
-
-    // Esperamos la cabecera 
-    if (read_line(cfd, line, sizeof(line)) <= 0) return;
-
-    int porto = -1, shift = 0;
-    size_t len = 0;
-    if (sscanf(line, "PORTO=%d;SHIFT=%d;LEN=%zu", &porto, &shift, &len) != 3) {
-        // Cabecera rechazada
-        (void)send_all(cfd, "RECHAZADO\n", 10);
-        return;
-    }
-
-    char *body = (char*)malloc(len + 1);
-    if (!body) return;
-
-    if (read_n(cfd, body, len) != 0) {
-        free(body);
-        return;
-    }
-    body[len] = '\0';
-
-    // procesamos si porto coincide con el puerto de datos
-    if (porto == listen_port) {
-        encryptCaesar(body, shift);
-        printf("[SERVER %d] Procesé %zu bytes (César shift=%d)\n", listen_port, len, shift);
-
-        if (send_all(cfd, "PROCESADO\n", 11) == 0) {
-            (void)send_all(cfd, body, strlen(body));
-            (void)send_all(cfd, "\n", 1);
+/* --- manda todo el buffer por el socket  --- */
+static int enviar_todo(int fd, const char *buf, size_t n) {
+    size_t enviado = 0;
+    while (enviado < n) {
+        ssize_t w = send(fd, buf + enviado, n - enviado, 0);
+        if (w <= 0) {
+            if (errno == EINTR) continue;
+            return -1;
         }
-    } else {
-        (void)send_all(cfd, "RECHAZADO\n", 10);
+        enviado += (size_t)w;
     }
-
-    free(body);
+    return 0;
 }
 
-// main
+/* --- abre un puerto de datos --- */
+static int abrir_puerto_datos(int *puerto_out) {
+    for (int i = 0; i < 64; i++) {
+        int s = socket(AF_INET, SOCK_STREAM, 0);
+        if (s < 0) return -1;
+
+        int yes = 1;
+        setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+
+        struct sockaddr_in a; memset(&a, 0, sizeof(a));
+        a.sin_family      = AF_INET;
+        a.sin_addr.s_addr = INADDR_ANY;
+        a.sin_port        = 0;               // que el kernel asigne
+
+        if (bind(s, (struct sockaddr*)&a, sizeof(a)) < 0) { close(s); continue; }
+        socklen_t alen = sizeof(a);
+        if (getsockname(s, (struct sockaddr*)&a, &alen) < 0) { close(s); continue; }
+
+        int p = ntohs(a.sin_port);
+        if (p <= 49200) { close(s); continue; }
+        if (listen(s, BACKLOG) < 0) { close(s); continue; }
+
+        *puerto_out = p;
+        fprintf(stderr, "[DEBUG] puerto datos efímero %d\n", p);
+        return s;
+    }
+
+    // rango fijo 50001–51000
+    for (int p = 50001; p <= 51000; p++) {
+        int s = socket(AF_INET, SOCK_STREAM, 0);
+        if (s < 0) return -1;
+
+        int yes = 1;
+        setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+
+        struct sockaddr_in a; memset(&a, 0, sizeof(a));
+        a.sin_family      = AF_INET;
+        a.sin_addr.s_addr = INADDR_ANY;
+        a.sin_port        = htons((uint16_t)p);
+
+        if (bind(s, (struct sockaddr*)&a, sizeof(a)) == 0 && listen(s, BACKLOG) == 0) {
+            *puerto_out = p;
+            fprintf(stderr, "[DEBUG] puerto datos fijo %d\n", p);
+            return s;
+        }
+        close(s);
+    }
+
+    fprintf(stderr, "[ERROR] no hay puerto de datos libre\n");
+    return -1;
+}
+
+/* --- devuelve "s01|s02ol */
+static const char* alias_por_fd(int fd) {
+    struct sockaddr_in local; socklen_t len = sizeof(local);
+    if (getsockname(fd, (struct sockaddr*)&local, &len) == 0) {
+        char ip[64];
+        if (inet_ntop(AF_INET, &local.sin_addr, ip, sizeof(ip))) {
+            if (strcmp(ip, IP_S01) == 0) return "s01";
+            if (strcmp(ip, IP_S02) == 0) return "s02";
+        }
+    }
+    return "recv"; // por si no funciona con ningún alias 
+}
+
+/* --- crea directorio si no existe  --- */
+static void asegurar_dir(const char *path) {
+    mkdir(path, 0755);
+}
+
+/* --- conexión de control --- */
+static void atender_control(int cfd) {
+    char linea[LINEA_MAX];
+    ssize_t ln = leer_linea(cfd, linea, sizeof(linea));
+    if (ln <= 0) return;
+
+    fprintf(stderr, "[DEBUG] cabecera: '%s'\n", linea);
+
+    char nombre_arch[256];
+    size_t tam = 0;
+    if (sscanf(linea, "FILENAME=%255[^;];LEN=%zu", nombre_arch, &tam) != 2) {
+        const char *bad = "ERROR formato cabecera\n";
+        enviar_todo(cfd, bad, strlen(bad));
+        return;
+    }
+
+    // se abre el puerto de datos y se le dice al cliente
+    int puerto_datos = -1;
+    int fd_datos = abrir_puerto_datos(&puerto_datos);
+    if (fd_datos < 0) {
+        const char *err = "ERROR no hay puerto datos\n";
+        enviar_todo(cfd, err, strlen(err));
+        return;
+    }
+
+    char resp[64];
+    int n = snprintf(resp, sizeof(resp), "DATA_PORT=%d\n", puerto_datos);
+    if (enviar_todo(cfd, resp, (size_t)n) != 0) {
+        close(fd_datos);
+        return;
+    }
+    fprintf(stderr, "[DEBUG] DATA_PORT=%d enviado\n", puerto_datos);
+
+    // se espera la conexión real 
+    struct sockaddr_in da; socklen_t dl = sizeof(da);
+    int dfd = accept(fd_datos, (struct sockaddr*)&da, &dl);
+    close(fd_datos);
+    if (dfd < 0) { perror("[ERROR] accept datos"); return; }
+
+    // decido carpeta por alias de la IP 
+    const char *alias = alias_por_fd(cfd);
+    const char *home  = getenv("HOME"); if (!home) home = ".";
+    char dir_alias[512]; snprintf(dir_alias, sizeof(dir_alias), "%s/%s", home, alias);
+    asegurar_dir(dir_alias);
+
+    char ruta_final[1024]; snprintf(ruta_final, sizeof(ruta_final), "%s/%s", dir_alias, nombre_arch);
+
+    // recibo el archivo y lo dejo en la carpeta 
+    FILE *out = fopen(ruta_final, "wb");
+    if (!out) { perror("[ERROR] fopen out"); close(dfd); return; }
+
+    size_t recibido = 0;
+    char buf[4096];
+
+    printf("[SERVER][%s] RECIBIENDO %s (%zu bytes) -> %s\n", alias, nombre_arch, tam, ruta_final);
+    fflush(stdout);
+
+    while (recibido < tam) {
+        size_t falta = tam - recibido; if (falta > sizeof(buf)) falta = sizeof(buf);
+        ssize_t r = recv(dfd, buf, falta, 0);
+        if (r <= 0) break;
+        fwrite(buf, 1, (size_t)r, out);
+        recibido += (size_t)r;
+    }
+    fclose(out);
+    close(dfd);
+
+    if (recibido == tam) {
+        printf("[SERVER][%s] COMPLETADO %s (%zu bytes)\n", alias, ruta_final, recibido);
+    } else {
+        fprintf(stderr, "[SERVER][%s] INCOMPLETO %s (%zu/%zu bytes)\n",
+                alias, ruta_final, recibido, tam);
+    }
+    fflush(stdout);
+}
 
 int main(int argc, char **argv) {
-    int ctrl_port = 0;
-    int data_port = 0;
+    if (argc != 2) {
+        fprintf(stderr, "Uso: %s <PUERTO_CONTROL>\n", argv[0]);
+        return 1;
+    }
+    int puerto = atoi(argv[1]);
 
-    if (argc == 2) {
-        data_port = atoi(argv[1]);
-        int ls = mklistener(data_port);
-        if (ls < 0) return 1;
+    // listener del puerto de control
+    int sfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sfd < 0) { perror("socket"); return 1; }
 
-        printf("[+] Data listening on %d...\n", data_port);
+    int yes = 1; setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
-        for (;;) {
-            struct sockaddr_in cli; socklen_t cl = sizeof(cli);
-            int cfd = accept(ls, (struct sockaddr*)&cli, &cl);
-            if (cfd < 0) {
-                if (errno == EINTR) continue;
-                perror("accept");
-                break;
-            }
-            handle_data(cfd, data_port);
-            close(cfd);
-        }
-        close(ls);
-        return 0;
+    struct sockaddr_in a; memset(&a, 0, sizeof(a));
+    a.sin_family      = AF_INET;
+    a.sin_addr.s_addr = INADDR_ANY;
+    a.sin_port        = htons((uint16_t)puerto);
 
-    } else if (argc == 3) {
-        ctrl_port = atoi(argv[1]);  
-        data_port = atoi(argv[2]);  
+    if (bind(sfd, (struct sockaddr*)&a, sizeof(a)) < 0) { perror("bind"); close(sfd); return 1; }
+    if (listen(sfd, BACKLOG) < 0) { perror("listen"); close(sfd); return 1; }
 
-        int ls_ctrl = mklistener(ctrl_port);
-        int ls_data = mklistener(data_port);
-        if (ls_ctrl < 0 || ls_data < 0) return 1;
+    printf("[+] Server (control) escuchando en %d\n", puerto);
+    fflush(stdout);
 
-        printf("[+] Control listening on %d...\n", ctrl_port);
-        printf("[+] Data    listening on %d...\n", data_port);
-
-        for (;;) {
-            fd_set r; FD_ZERO(&r);
-            FD_SET(ls_ctrl, &r);
-            FD_SET(ls_data, &r);
-            int maxfd = (ls_ctrl > ls_data ? ls_ctrl : ls_data);
-
-            if (select(maxfd + 1, &r, NULL, NULL, NULL) < 0) {
-                if (errno == EINTR) continue;
-                perror("select");
-                break;
-            }
-            if (FD_ISSET(ls_ctrl, &r)) {
-                struct sockaddr_in cli; socklen_t cl = sizeof(cli);
-                int cfd = accept(ls_ctrl, (struct sockaddr*)&cli, &cl);
-                if (cfd >= 0) {
-                    char out[64];
-                    int n = snprintf(out, sizeof(out), "NEWPORT=%d\n", data_port);
-                    (void)send_all(cfd, out, (size_t)n);
-                    close(cfd);
-                }
-            }
-            if (FD_ISSET(ls_data, &r)) {
-                struct sockaddr_in cli; socklen_t cl = sizeof(cli);
-                int cfd = accept(ls_data, (struct sockaddr*)&cli, &cl);
-                if (cfd >= 0) {
-                    handle_data(cfd, data_port);
-                    close(cfd);
-                }
-            }
-        }
-
-        close(ls_ctrl);
-        close(ls_data);
-        return 0;
+    // se atienden conexiones de control y se reciben archivos
+    for (;;) {
+        struct sockaddr_in cli; socklen_t cl = sizeof(cli);
+        int cfd = accept(sfd, (struct sockaddr*)&cli, &cl);
+        if (cfd < 0) { if (errno == EINTR) continue; perror("accept"); break; }
+        atender_control(cfd);
+        close(cfd);
     }
 
-    fprintf(stderr,
-            "Uso:\n"
-            "  %s <PUERTO_DATOS>\n"
-            "  %s 49200 <PUERTO_DATOS>\n",
-            argv[0], argv[0]);
-    return 1;
+    close(sfd);
+    return 0;
 }
-//finnn
+//finnnn

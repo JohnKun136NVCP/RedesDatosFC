@@ -10,7 +10,8 @@
 #include <stdbool.h>
 
 #define BUFFER_SIZE 7000
-#define PORT 49200
+#define PORT 49200 
+//Comentario para marcar la parte A el día 22 de sep
 /**
  * FUnción principal que obtiene el puerto a escuchar de la linea de comandos
  */
