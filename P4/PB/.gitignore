@@ -1,0 +1,15 @@
+# Binarios y objetos
+server
+client
+*.o
+
+# Logs y archivos de prueba
+cliente_log.txt
+*.log
+*.txt
+*.dat
+
+# Misceláneo
+core
+*.swp
+.DS_Store
