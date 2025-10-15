@@ -1,0 +1,14 @@
+# binarios
+server
+client
+*.o
+*.out
+*.log
+cliente.log
+cliente_log.txt
+
+# outputs / datos de prueba
+binA.dat
+*.txt
+
+
