@@ -1,4 +1,4 @@
-# Cómo user este programa
+# Cómo usar este programa
 
 ## Primero es compilar el programa
 
